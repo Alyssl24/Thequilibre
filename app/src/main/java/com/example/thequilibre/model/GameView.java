@@ -4,6 +4,7 @@ import android.content.Context;
 import android.graphics.Canvas;
 import android.graphics.Color;
 import android.graphics.Paint;
+import android.graphics.PorterDuff;
 import android.graphics.RectF;
 import android.view.SurfaceHolder;
 import android.view.SurfaceView;
@@ -48,7 +49,7 @@ public class GameView extends SurfaceView implements SurfaceHolder.Callback {
             difficultySpeed = 10;
         }
     }
-    
+
     public GameView(Context context) {
         super(context);
 
@@ -150,16 +151,27 @@ public class GameView extends SurfaceView implements SurfaceHolder.Callback {
         super.draw(canvas);
 
         if (canvas == null) return;
+        canvas.drawColor(Color.TRANSPARENT, PorterDuff.Mode.CLEAR);
 
-        float left = 50f;
-        float top = 100f;
-        float right = getWidth() - 50f;
-        float bottom = top + 60f;
+        float horizontalInset = 24f;
+        float verticalInset = 16f;
+        float left = horizontalInset;
+        float right = getWidth() - horizontalInset;
+        if (right <= left) {
+            return;
+        }
 
         paint.setColor(Color.DKGRAY);
         String scoreText = "Score: " + score;
-        float scoreTextY = top - 24f;
+        Paint.FontMetrics metrics = paint.getFontMetrics();
+        float scoreTextY = verticalInset - metrics.ascent;
         canvas.drawText(scoreText, left, scoreTextY, paint);
+
+        float barTop = scoreTextY + metrics.descent + 12f;
+        float desiredBarHeight = 44f;
+        float maxBarBottom = getHeight() - verticalInset;
+        float bottom = Math.min(barTop + desiredBarHeight, maxBarBottom);
+        float top = Math.max(verticalInset, bottom - desiredBarHeight);
 
         float progressWidth = left + (temperature / (float) maxTemperature) * (right - left);
 
@@ -181,7 +193,7 @@ public class GameView extends SurfaceView implements SurfaceHolder.Callback {
         paint.setColor(Color.WHITE);
 
         float tempCelsius = getCurrentTemperatureCelsius();
-        String text = (int) tempCelsius + " °C";
+        String text = (int) tempCelsius + " \u00B0C";
 
         float textX = right - paint.measureText(text) - 20;
         float textY = top + (bottom - top) / 2 - ((paint.descent() + paint.ascent()) / 2);
