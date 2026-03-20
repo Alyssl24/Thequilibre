@@ -19,6 +19,8 @@ public class GameView extends SurfaceView implements SurfaceHolder.Callback {
 
     private int frameCounter = 0;
 
+    private boolean isBlowing = false;
+
     public GameView(Context context) {
         super(context);
 
@@ -32,6 +34,10 @@ public class GameView extends SurfaceView implements SurfaceHolder.Callback {
         paint.setTextSize(40);
 
         thread = new GameThread(getHolder(), this);
+    }
+
+    public void setBlowing(boolean blowing) {
+        this.isBlowing = blowing;
     }
 
     @Override
@@ -59,22 +65,23 @@ public class GameView extends SurfaceView implements SurfaceHolder.Callback {
     @Override
     public void surfaceChanged(SurfaceHolder holder, int format, int width, int height) {}
 
-
     public void update() {
 
         frameCounter++;
 
-        // ~30 secondes pour atteindre 100
-        if (frameCounter >= 18) {
-
-            if (temperature < maxTemperature) {
-                temperature++;
+        if (isBlowing) {
+            temperature -= 2;
+        } else {
+            if (frameCounter >= 18) {
+                if (temperature < maxTemperature) {
+                    temperature++;
+                }
+                frameCounter = 0;
             }
-
-            frameCounter = 0;
         }
-    }
 
+        if (temperature < 0) temperature = 0;
+    }
 
     @Override
     public void draw(Canvas canvas) {
@@ -82,19 +89,16 @@ public class GameView extends SurfaceView implements SurfaceHolder.Callback {
 
         if (canvas == null) return;
 
+        float left = 50f;
+        float top = 100f;
+        float right = getWidth() - 50f;
+        float bottom = top + 60f;
 
-        float left = 50;
-        float top = 100;
-        float right = getWidth() - 50;
-        float bottom = top + 60;
-
-        float progressWidth = left + ((temperature / (float) maxTemperature) * (right - left));
-
+        float progressWidth = left + (temperature / (float) maxTemperature) * (right - left);
 
         paint.setColor(Color.DKGRAY);
         RectF background = new RectF(left, top, right, bottom);
         canvas.drawRoundRect(background, 30, 30, paint);
-
 
         if (temperature < 50) {
             paint.setColor(Color.CYAN);
@@ -110,7 +114,6 @@ public class GameView extends SurfaceView implements SurfaceHolder.Callback {
         paint.setColor(Color.WHITE);
 
         float tempCelsius = 20 + (temperature / (float) maxTemperature) * 40;
-
         String text = (int) tempCelsius + " °C";
 
         float textX = right - paint.measureText(text) - 20;
