@@ -41,6 +41,7 @@ public class GamePageActivity extends AppCompatActivity {
 
     private GameView gameView;
     private BatonView batonView;
+    private CupView cupView;
     private ObstacleSystem obstacleSystem;
 
     private AudioRecord audioRecord;
@@ -55,6 +56,7 @@ public class GamePageActivity extends AppCompatActivity {
     private final float[] orientationAngles = new float[3];
 
     private float filteredRotationDegrees;
+    private boolean batonStartPositionInitialized;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -68,9 +70,19 @@ public class GamePageActivity extends AppCompatActivity {
         View root = findViewById(R.id.main);
 
         batonView = findViewById(R.id.baton_view);
+        cupView = findViewById(R.id.cup_view);
         View space1 = findViewById(R.id.space_1);
         View space2 = findViewById(R.id.space_2);
         View referenceSquare = findViewById(R.id.square_1_1);
+
+        if (cupView != null) {
+            cupView.attachToBaton(batonView);
+        }
+        batonView.setStateListener(() -> {
+            if (cupView != null) {
+                cupView.invalidate();
+            }
+        });
 
         gameView = new GameView(this);
         container.addView(gameView);
@@ -262,7 +274,13 @@ public class GamePageActivity extends AppCompatActivity {
 
         batonView.setMovementBounds(minY, maxY);
         batonView.setCupSizeFromSquare(referenceSquare.getWidth(), referenceSquare.getHeight());
-        batonView.moveTo(ySpace1);
+        if (!batonStartPositionInitialized) {
+            batonView.moveTo(ySpace1);
+            batonStartPositionInitialized = true;
+        }
+        if (cupView != null) {
+            cupView.invalidate();
+        }
     }
 
     private float getCenterYInViewCoordinates(View source, View target) {

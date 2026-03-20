@@ -337,7 +337,7 @@ public class ObstacleSystem {
 
             if (obstacle.state == ObstacleState.DANGEROUS) {
                 toScreenRect(slotRects[slotIndex], tempScreenRect);
-                if (batonView.intersectsRectOnScreen(tempScreenRect)) {
+                if (batonView.intersectsCupRectOnScreen(tempScreenRect)) {
                     listener.onDangerousCollision(slotIndex);
                     removeObstacle(i);
                     continue;
