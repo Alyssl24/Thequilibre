@@ -85,6 +85,14 @@ public class GamePageActivity extends AppCompatActivity {
         });
 
         gameView = new GameView(this);
+
+        String difficulty = getIntent().getStringExtra(EXTRA_DIFFICULTY);
+
+        if (difficulty == null) {
+            difficulty = DIFFICULTY_MEDIUM;
+        }
+        gameView.setDifficulty(difficulty);
+
         container.addView(gameView);
 
         List<View> slotViews = Arrays.asList(

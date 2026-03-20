@@ -20,7 +20,20 @@ public class GameView extends SurfaceView implements SurfaceHolder.Callback {
     private int frameCounter = 0;
 
     private boolean isBlowing = false;
+    private int difficultySpeed = 18;
 
+
+    public void setDifficulty(String difficulty) {
+
+        if (difficulty.equals("Easy")) {
+            difficultySpeed = 18;
+        } else if (difficulty.equals("Hard")) {
+            difficultySpeed = 4;
+        } else {
+            difficultySpeed = 10;
+        }
+    }
+    
     public GameView(Context context) {
         super(context);
 
@@ -72,7 +85,7 @@ public class GameView extends SurfaceView implements SurfaceHolder.Callback {
         if (isBlowing) {
             temperature -= 2;
         } else {
-            if (frameCounter >= 18) {
+            if (frameCounter >= difficultySpeed){
                 if (temperature < maxTemperature) {
                     temperature++;
                 }
