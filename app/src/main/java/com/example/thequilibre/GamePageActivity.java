@@ -23,6 +23,7 @@ import androidx.core.view.ViewCompat;
 import androidx.core.view.WindowInsetsCompat;
 
 import com.example.thequilibre.game.ObstacleSystem;
+import com.example.thequilibre.history.ScoreHistoryRepository;
 import com.example.thequilibre.model.GameView;
 
 import java.util.Arrays;
@@ -36,6 +37,7 @@ public class GamePageActivity extends AppCompatActivity {
     public static final String EXTRA_DIFFICULTY = "com.example.thequilibre.extra.DIFFICULTY";
     public static final String EXTRA_FINAL_SCORE = "com.example.thequilibre.extra.FINAL_SCORE";
     public static final String EXTRA_GAME_OVER_REASON = "com.example.thequilibre.extra.GAME_OVER_REASON";
+    public static final String EXTRA_FINAL_DIFFICULTY = "com.example.thequilibre.extra.FINAL_DIFFICULTY";
 
     private static final float ROTATION_SMOOTHING = 0.18f;
     private static final float MAX_BATON_ROTATION_DEGREES = 50f;
@@ -52,6 +54,7 @@ public class GamePageActivity extends AppCompatActivity {
     private BatonView batonView;
     private CupView cupView;
     private ObstacleSystem obstacleSystem;
+    private ScoreHistoryRepository scoreHistoryRepository;
 
     private AudioRecord audioRecord;
     private boolean isRecording = false;
@@ -70,6 +73,7 @@ public class GamePageActivity extends AppCompatActivity {
     private int finalScore;
     private boolean isGameOver;
     private GameOverReason gameOverReason;
+    private String selectedDifficultyForRun = DIFFICULTY_MEDIUM;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -98,6 +102,7 @@ public class GamePageActivity extends AppCompatActivity {
         });
 
         gameView = new GameView(this);
+        scoreHistoryRepository = new ScoreHistoryRepository(this);
         currentScore = 0;
         finalScore = 0;
         isGameOver = false;
@@ -131,6 +136,7 @@ public class GamePageActivity extends AppCompatActivity {
         if (selectedDifficulty == null || selectedDifficulty.trim().isEmpty()) {
             selectedDifficulty = DIFFICULTY_MEDIUM;
         }
+        selectedDifficultyForRun = selectedDifficulty;
 
         obstacleSystem = new ObstacleSystem(
                 this,
@@ -287,6 +293,9 @@ public class GamePageActivity extends AppCompatActivity {
         isGameOver = true;
         gameOverReason = reason;
         finalScore = currentScore;
+        if (scoreHistoryRepository != null) {
+            scoreHistoryRepository.saveScore(finalScore, selectedDifficultyForRun);
+        }
 
         if (gameView != null) {
             gameView.setGameOver(true);
@@ -323,6 +332,7 @@ public class GamePageActivity extends AppCompatActivity {
     public Bundle buildGameOverPayloadForEndScreen() {
         Bundle payload = new Bundle();
         payload.putInt(EXTRA_FINAL_SCORE, finalScore);
+        payload.putString(EXTRA_FINAL_DIFFICULTY, selectedDifficultyForRun);
         if (gameOverReason != null) {
             payload.putString(EXTRA_GAME_OVER_REASON, gameOverReason.name());
         }

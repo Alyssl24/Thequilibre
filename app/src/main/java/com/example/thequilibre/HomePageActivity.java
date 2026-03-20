@@ -52,6 +52,15 @@ public class HomePageActivity extends AppCompatActivity {
             startActivity(intent);
         });
 
+        TextView historyLink = findViewById(R.id.text_history_link);
+        historyLink.setOnClickListener(view -> {
+            Intent intent = HistoryActivity.createIntent(
+                    HomePageActivity.this,
+                    HistoryActivity.ENTRY_POINT_HOME
+            );
+            startActivity(intent);
+        });
+
         MaterialButtonToggleGroup difficultyToggleGroup = findViewById(R.id.difficulty_toggle_group);
         difficultyToggleGroup.addOnButtonCheckedListener((group, checkedId, isChecked) -> {
             if (!isChecked) {
