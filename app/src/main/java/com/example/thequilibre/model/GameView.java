@@ -173,11 +173,13 @@ public class GameView extends SurfaceView implements SurfaceHolder.Callback {
         float bottom = Math.min(barTop + desiredBarHeight, maxBarBottom);
         float top = Math.max(verticalInset, bottom - desiredBarHeight);
 
-        float progressWidth = left + (temperature / (float) maxTemperature) * (right - left);
+        float barHeight = bottom - top;
+        float cornerRadius = barHeight / 2f;
+        float fillWidth = (temperature / (float) maxTemperature) * (right - left);
 
         paint.setColor(Color.DKGRAY);
         RectF background = new RectF(left, top, right, bottom);
-        canvas.drawRoundRect(background, 30, 30, paint);
+        canvas.drawRoundRect(background, cornerRadius, cornerRadius, paint);
 
         if (temperature < 50) {
             paint.setColor(Color.CYAN);
@@ -187,8 +189,16 @@ public class GameView extends SurfaceView implements SurfaceHolder.Callback {
             paint.setColor(Color.RED);
         }
 
-        RectF progress = new RectF(left, top, progressWidth, bottom);
-        canvas.drawRoundRect(progress, 30, 30, paint);
+        if (fillWidth > 0f) {
+            if (fillWidth < barHeight) {
+                float radius = fillWidth / 2f;
+                float centerY = top + cornerRadius;
+                canvas.drawCircle(left + radius, centerY, radius, paint);
+            } else {
+                RectF progress = new RectF(left, top, left + fillWidth, bottom);
+                canvas.drawRoundRect(progress, cornerRadius, cornerRadius, paint);
+            }
+        }
 
         paint.setColor(Color.WHITE);
 
