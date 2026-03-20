@@ -21,6 +21,7 @@ public class BatonView extends View {
     private static final float CUP_ACCELERATION = 0.015f;
     private static final float CUP_FRICTION = 0.92f;
     private static final float CUP_MAX_SPEED = 0.035f;
+
     private float minY;
     private float maxY;
     private float currentY;
@@ -60,6 +61,7 @@ public class BatonView extends View {
         cupHandlePaint.setStyle(Paint.Style.STROKE);
         cupHandlePaint.setStrokeWidth(dpToPx(3f));
         cupHandlePaint.setColor(0xFF8C4A10);
+
         batonHeight = dpToPx(14f);
         batonMargin = dpToPx(12f);
         cupWidth = dpToPx(40f);
