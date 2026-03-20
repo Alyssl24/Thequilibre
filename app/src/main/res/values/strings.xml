@@ -1,3 +1,6 @@
 <resources>
     <string name="app_name">Thequilibre</string>
+    <string name="home_title">Welcome to the Thequilibre Game !</string>
+    <string name="home_subtitle">Ready to dodge every square, while keeping your tea cool with care?</string>
+    <string name="home_play_button">Play</string>
 </resources>
