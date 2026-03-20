@@ -46,6 +46,12 @@ public class HomePageActivity extends AppCompatActivity {
             startActivity(intent);
         });
 
+        TextView rulesLink = findViewById(R.id.text_rules_link);
+        rulesLink.setOnClickListener(view -> {
+            Intent intent = new Intent(HomePageActivity.this, RulesActivity.class);
+            startActivity(intent);
+        });
+
         MaterialButtonToggleGroup difficultyToggleGroup = findViewById(R.id.difficulty_toggle_group);
         difficultyToggleGroup.addOnButtonCheckedListener((group, checkedId, isChecked) -> {
             if (!isChecked) {

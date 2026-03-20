@@ -20,4 +20,11 @@
     <string name="about_alex_role">Role: Developer</string>
     <string name="about_alyssia_name">Alyssia LECLERC</string>
     <string name="about_alyssia_role">Role: Developer, Product Owner</string>
+    <string name="home_rules_link">Rules</string>
+    <string name="rules_title">Game rules</string>
+    <string name="rules_back_home">&lt; Back to home</string>
+    <string name="rules_intro">Keep your cup balanced while avoiding obstacles for as long as possible.</string>
+    <string name="rules_list">1. Tilt your device to move the cup left and right.\n2. Avoid every red obstacle tile.\n3. Green growing tiles become harder to dodge over time.\n4. The game ends when your cup hits an obstacle.\n5. Survive longer to increase your score and challenge yourself.</string>
+    <string name="rules_tip_title">Tip</string>
+    <string name="rules_tip_text">Use smooth movements instead of sudden swings to stay in control.</string>
 </resources>
