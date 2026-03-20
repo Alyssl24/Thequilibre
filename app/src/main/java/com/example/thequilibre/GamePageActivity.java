@@ -140,6 +140,7 @@ public class GamePageActivity extends AppCompatActivity {
         ViewCompat.setOnApplyWindowInsetsListener(root, (gamePageRoot, insets) -> {
             Insets systemBars = insets.getInsets(WindowInsetsCompat.Type.systemBars());
             gamePageRoot.setPadding(systemBars.left, systemBars.top, systemBars.right, systemBars.bottom);
+            gamePageRoot.post(() -> configureBatonBounds(batonView, space1, space2, referenceSquare));
             return insets;
         });
         root.addOnLayoutChangeListener((v, left, top, right, bottom,
