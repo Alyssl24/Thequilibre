@@ -223,13 +223,43 @@ public class ObstacleSystem {
             return false;
         }
 
-        if (candidates.size() > 1) {
-            candidates.remove(Integer.valueOf(lastSpawnSlot));
+        int availableCapacity = Math.min(
+                candidates.size(),
+                maxSimultaneous - activeBySlot.size()
+        );
+        if (availableCapacity <= 0) {
+            return false;
         }
-        int chosenSlot = candidates.get(random.nextInt(candidates.size()));
-        spawnAtSlot(chosenSlot, nowMs, elapsedMs);
-        lastSpawnSlot = chosenSlot;
+
+        int spawnCount = difficultyProfile.rollSpawnCount(elapsedMs, availableCapacity, random);
+        List<Integer> selectedSlots = pickDistinctSpawnSlots(candidates, spawnCount);
+        if (selectedSlots.isEmpty()) {
+            return false;
+        }
+
+        for (int slotIndex : selectedSlots) {
+            spawnAtSlot(slotIndex, nowMs, elapsedMs);
+        }
+        lastSpawnSlot = selectedSlots.get(selectedSlots.size() - 1);
         return true;
+    }
+
+    @NonNull
+    private List<Integer> pickDistinctSpawnSlots(@NonNull List<Integer> availableSlots, int spawnCount) {
+        List<Integer> pool = new ArrayList<>(availableSlots);
+        if (pool.size() > spawnCount
+                && pool.contains(lastSpawnSlot)
+                && (pool.size() - 1) >= spawnCount) {
+            pool.remove(Integer.valueOf(lastSpawnSlot));
+        }
+
+        List<Integer> selected = new ArrayList<>(spawnCount);
+        int count = Math.min(spawnCount, pool.size());
+        for (int i = 0; i < count; i++) {
+            int randomIndex = random.nextInt(pool.size());
+            selected.add(pool.remove(randomIndex));
+        }
+        return selected;
     }
 
     private void spawnAtSlot(int slotIndex, long nowMs, long elapsedMs) {
@@ -389,6 +419,7 @@ public class ObstacleSystem {
         final float dangerDecayPerSecond;
         final int initialMaxSimultaneous;
         final long[] maxSimThresholdsMs;
+        final boolean supportsMultiSpawn;
 
         DifficultyProfile(long baseSpawnDelayMs,
                           long minSpawnDelayMs,
@@ -400,7 +431,8 @@ public class ObstacleSystem {
                           long minDangerDurationMs,
                           float dangerDecayPerSecond,
                           int initialMaxSimultaneous,
-                          long[] maxSimThresholdsMs) {
+                          long[] maxSimThresholdsMs,
+                          boolean supportsMultiSpawn) {
             this.baseSpawnDelayMs = baseSpawnDelayMs;
             this.minSpawnDelayMs = minSpawnDelayMs;
             this.spawnDecayPerSecond = spawnDecayPerSecond;
@@ -412,6 +444,7 @@ public class ObstacleSystem {
             this.dangerDecayPerSecond = dangerDecayPerSecond;
             this.initialMaxSimultaneous = initialMaxSimultaneous;
             this.maxSimThresholdsMs = maxSimThresholdsMs;
+            this.supportsMultiSpawn = supportsMultiSpawn;
         }
 
         static DifficultyProfile fromLabel(@Nullable String difficultyLabel) {
@@ -421,7 +454,8 @@ public class ObstacleSystem {
                         2200L, 1400L, 2.0f,
                         950L, 700L, 1.0f,
                         2,
-                        new long[]{45_000L, 120_000L, 240_000L}
+                        new long[]{45_000L, 120_000L, 240_000L},
+                        false
                 );
             }
             if (GamePageActivity.DIFFICULTY_HARD.equals(difficultyLabel)) {
@@ -430,7 +464,8 @@ public class ObstacleSystem {
                         1500L, 750L, 3.2f,
                         800L, 520L, 1.1f,
                         4,
-                        new long[]{25_000L}
+                        new long[]{25_000L},
+                        true
                 );
             }
             return new DifficultyProfile(
@@ -438,7 +473,8 @@ public class ObstacleSystem {
                     1800L, 1000L, 2.7f,
                     900L, 620L, 1.0f,
                     3,
-                    new long[]{35_000L, 95_000L}
+                    new long[]{35_000L, 95_000L},
+                    false
             );
         }
 
@@ -462,6 +498,23 @@ public class ObstacleSystem {
                 }
             }
             return Math.min(HARD_ACTIVE_LIMIT, maxSimultaneous);
+        }
+
+        int rollSpawnCount(long elapsedMs, int availableCapacity, @NonNull Random random) {
+            if (!supportsMultiSpawn || availableCapacity <= 1) {
+                return 1;
+            }
+
+            int roll = random.nextInt(100);
+            int desiredCount;
+            if (elapsedMs < 45_000L) {
+                desiredCount = roll < 55 ? 1 : (roll < 90 ? 2 : 3);
+            } else if (elapsedMs < 120_000L) {
+                desiredCount = roll < 35 ? 1 : (roll < 80 ? 2 : 3);
+            } else {
+                desiredCount = roll < 25 ? 1 : (roll < 70 ? 2 : 3);
+            }
+            return Math.max(1, Math.min(desiredCount, availableCapacity));
         }
 
         private long decay(long base, long min, float decayPerSecond, long elapsedMs) {
