@@ -19,6 +19,7 @@ public class BatonView extends View {
     private float batonHeight;
     private float batonMargin;
     private float selectionPadding;
+    private float rotationDegrees;
     private boolean isInitialized;
     private boolean isDragging;
 
@@ -62,6 +63,11 @@ public class BatonView extends View {
         invalidate();
     }
 
+    public void setBatonRotationDegrees(float rotationDegrees) {
+        this.rotationDegrees = rotationDegrees;
+        invalidate();
+    }
+
     @Override
     protected void onDraw(@NonNull Canvas canvas) {
         super.onDraw(canvas);
@@ -69,7 +75,11 @@ public class BatonView extends View {
         float right = getWidth() - batonMargin;
         float top = currentY - batonHeight / 2f;
         float bottom = currentY + batonHeight / 2f;
+
+        canvas.save();
+        canvas.rotate(rotationDegrees, getWidth() / 2f, currentY);
         canvas.drawRoundRect(left, top, right, bottom, batonHeight / 2f, batonHeight / 2f, paint);
+        canvas.restore();
     }
 
     @Override
