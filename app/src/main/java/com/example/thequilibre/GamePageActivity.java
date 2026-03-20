@@ -137,47 +137,4 @@ public class GamePageActivity extends AppCompatActivity {
                 configureBatonBounds(batonView, space1, space2)
         );
     }
-
-    @Override
-    protected void onResume() {
-        super.onResume();
-        if (sensorManager != null && rotationVectorSensor != null) {
-            sensorManager.registerListener(
-                    orientationListener,
-                    rotationVectorSensor,
-                    SensorManager.SENSOR_DELAY_GAME
-            );
-        }
-    }
-
-    @Override
-    protected void onPause() {
-        super.onPause();
-        if (sensorManager != null) {
-            sensorManager.unregisterListener(orientationListener);
-        }
-    }
-
-    private void configureBatonBounds(BatonView batonView, View space1, View space2) {
-        float ySpace1 = getCenterYInViewCoordinates(space1, batonView);
-        float ySpace2 = getCenterYInViewCoordinates(space2, batonView);
-
-        float minY = Math.min(ySpace1, ySpace2);
-        float maxY = Math.max(ySpace1, ySpace2);
-
-        batonView.setMovementBounds(minY, maxY);
-        batonView.moveTo(ySpace1);
-    }
-
-    private float getCenterYInViewCoordinates(View source, View target) {
-        int[] sourceLocation = new int[2];
-        int[] targetLocation = new int[2];
-        source.getLocationOnScreen(sourceLocation);
-        target.getLocationOnScreen(targetLocation);
-        return (sourceLocation[1] - targetLocation[1]) + (source.getHeight() / 2f);
-    }
-
-    private float clamp(float value, float min, float max) {
-        return Math.max(min, Math.min(max, value));
-    }
 }
