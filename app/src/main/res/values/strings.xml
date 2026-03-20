@@ -50,4 +50,17 @@
     <string name="history_unknown_date">Unknown date</string>
     <string name="history_empty_title">No games yet</string>
     <string name="history_empty_subtitle">Play your first run to start building your score history.</string>
+    <string name="end_game_header_badge">Run finished</string>
+    <string name="end_game_title">Game over</string>
+    <string name="end_game_subtitle">Your run has ended. Check your result and jump back in.</string>
+    <string name="end_game_score_label">Final score</string>
+    <string name="end_game_score_value">%1$d pts</string>
+    <string name="end_game_score_value_fallback">0 pts</string>
+    <string name="end_game_difficulty_label">Difficulty: %1$s</string>
+    <string name="end_game_difficulty_label_fallback">Difficulty: Medium</string>
+    <string name="end_game_reason_collision">Defeat reason: collision</string>
+    <string name="end_game_reason_temperature">Defeat reason: temperature limit</string>
+    <string name="end_game_reason_unknown">Defeat reason: run ended</string>
+    <string name="end_game_restart_button">Restart</string>
+    <string name="end_game_home_button">Return to home</string>
 </resources>

@@ -1,6 +1,7 @@
 package com.example.thequilibre;
 
 import android.Manifest;
+import android.content.Intent;
 import android.content.pm.PackageManager;
 import android.hardware.Sensor;
 import android.hardware.SensorEvent;
@@ -74,6 +75,7 @@ public class GamePageActivity extends AppCompatActivity {
     private boolean isGameOver;
     private GameOverReason gameOverReason;
     private String selectedDifficultyForRun = DIFFICULTY_MEDIUM;
+    private boolean hasLaunchedEndScreen;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -107,6 +109,7 @@ public class GamePageActivity extends AppCompatActivity {
         finalScore = 0;
         isGameOver = false;
         gameOverReason = null;
+        hasLaunchedEndScreen = false;
         gameView.setScore(currentScore);
         gameView.setGameEventListener(temperatureCelsius -> runOnUiThread(() -> {
             if (temperatureCelsius >= GAME_OVER_TEMPERATURE_CELSIUS) {
@@ -313,6 +316,23 @@ public class GamePageActivity extends AppCompatActivity {
             sensorManager.unregisterListener(orientationListener);
         }
         stopMicrophoneCapture();
+        navigateToEndScreen();
+    }
+
+    private void navigateToEndScreen() {
+        if (hasLaunchedEndScreen || isFinishing() || isDestroyed()) {
+            return;
+        }
+        hasLaunchedEndScreen = true;
+
+        Intent intent = EndGameActivity.createIntent(
+                this,
+                finalScore,
+                selectedDifficultyForRun,
+                gameOverReason != null ? gameOverReason.name() : null
+        );
+        startActivity(intent);
+        finish();
     }
 
     private void stopMicrophoneCapture() {
