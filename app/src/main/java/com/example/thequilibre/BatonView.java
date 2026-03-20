@@ -15,7 +15,6 @@ import androidx.annotation.Nullable;
 public class BatonView extends View {
 
     private static final int BATON_BASE_COLOR = 0xFF2F2F2F;
-    private static final int BATON_HIT_COLOR = 0xFFD15743;
     private static final long HIT_FLASH_DURATION_MS = 180L;
 
     private final Paint paint = new Paint(Paint.ANTI_ALIAS_FLAG);
@@ -120,9 +119,10 @@ public class BatonView extends View {
     public void notifyDangerCollision() {
         hitFlashUntilMs = SystemClock.uptimeMillis() + HIT_FLASH_DURATION_MS;
         invalidate();
+        notifyStateChanged();
     }
 
-    public boolean intersectsRectOnScreen(@NonNull RectF rectOnScreen) {
+    public boolean intersectsCupRectOnScreen(@NonNull RectF rectOnScreen) {
         if (getWidth() <= 0 || getHeight() <= 0) {
             return false;
         }
@@ -131,7 +131,10 @@ public class BatonView extends View {
 
         RectF localRect = new RectF(rectOnScreen);
         localRect.offset(-location[0], -location[1]);
-        return intersectsRect(localRect);
+
+        RectF unrotatedObstacleRect = inverseRotateRect(localRect, rotationDegrees, getWidth() / 2f, currentY);
+        RectF cupBounds = getCupBoundsUnrotated();
+        return RectF.intersects(cupBounds, unrotatedObstacleRect);
     }
 
     public void setStateListener(@Nullable StateListener stateListener) {
@@ -170,6 +173,10 @@ public class BatonView extends View {
         return rotationDegrees;
     }
 
+    public boolean isDangerFlashActive() {
+        return SystemClock.uptimeMillis() <= hitFlashUntilMs;
+    }
+
     @Override
     protected void onDraw(@NonNull Canvas canvas) {
         super.onDraw(canvas);
@@ -177,8 +184,7 @@ public class BatonView extends View {
         float right = getWidth() - batonMargin;
         float top = currentY - batonHeight / 2f;
         float bottom = currentY + batonHeight / 2f;
-        long now = SystemClock.uptimeMillis();
-        paint.setColor(now <= hitFlashUntilMs ? BATON_HIT_COLOR : BATON_BASE_COLOR);
+        paint.setColor(BATON_BASE_COLOR);
 
         canvas.save();
         canvas.rotate(rotationDegrees, getWidth() / 2f, currentY);
@@ -223,61 +229,64 @@ public class BatonView extends View {
         return Math.max(minY, Math.min(maxY, value));
     }
 
-    private boolean intersectsRect(@NonNull RectF localRect) {
-        RectF expandedRect = new RectF(localRect);
-        float halfThickness = batonHeight / 2f;
-        expandedRect.inset(-halfThickness, -halfThickness);
-
-        float centerX = getWidth() / 2f;
-        float centerY = currentY;
-        float halfLength = Math.max(0f, (getWidth() - (2f * batonMargin)) / 2f);
-
-        float radians = (float) Math.toRadians(rotationDegrees);
-        float dx = (float) Math.cos(radians) * halfLength;
-        float dy = (float) Math.sin(radians) * halfLength;
-
-        float x1 = centerX - dx;
-        float y1 = centerY - dy;
-        float x2 = centerX + dx;
-        float y2 = centerY + dy;
-
-        if (expandedRect.contains(x1, y1) || expandedRect.contains(x2, y2)) {
-            return true;
-        }
-
-        float overlapLeft = Math.max(Math.min(x1, x2), expandedRect.left);
-        float overlapRight = Math.min(Math.max(x1, x2), expandedRect.right);
-        if (overlapLeft > overlapRight) {
-            return false;
-        }
-
-        if (Math.abs(x2 - x1) < 0.0001f) {
-            if (x1 < expandedRect.left || x1 > expandedRect.right) {
-                return false;
-            }
-            float segmentMinY = Math.min(y1, y2);
-            float segmentMaxY = Math.max(y1, y2);
-            return segmentMaxY >= expandedRect.top && segmentMinY <= expandedRect.bottom;
-        }
-
-        float yAtLeft = yOnSegmentAtX(x1, y1, x2, y2, overlapLeft);
-        float yAtRight = yOnSegmentAtX(x1, y1, x2, y2, overlapRight);
-        float minY = Math.min(yAtLeft, yAtRight);
-        float maxY = Math.max(yAtLeft, yAtRight);
-        return maxY >= expandedRect.top && minY <= expandedRect.bottom;
-    }
-
-    private float yOnSegmentAtX(float x1, float y1, float x2, float y2, float x) {
-        float t = (x - x1) / (x2 - x1);
-        return y1 + ((y2 - y1) * t);
-    }
-
     private float clamp(float value, float min, float max) {
         return Math.max(min, Math.min(max, value));
     }
 
     private float dpToPx(float dp) {
         return dp * getResources().getDisplayMetrics().density;
+    }
+
+    private RectF getCupBoundsUnrotated() {
+        float left = batonMargin;
+        float right = getWidth() - batonMargin;
+        float top = currentY - (batonHeight / 2f);
+
+        float handleReach = cupWidth * 0.22f;
+        float halfTravel = Math.max(0f, ((right - left) / 2f) - (cupWidth / 2f) - handleReach - cupInset);
+        float cupCenterX = (getWidth() / 2f) + (cupOffsetNormalized * halfTravel);
+        float cupBottomY = top - dpToPx(2f);
+        float cupTopY = cupBottomY - cupHeight;
+        float cupLeft = cupCenterX - (cupWidth / 2f);
+        float cupRight = cupCenterX + (cupWidth / 2f);
+        float rimHeight = Math.max(dpToPx(3f), cupHeight * 0.08f);
+
+        return new RectF(
+                cupLeft,
+                cupTopY - (rimHeight * 0.35f),
+                cupRight + handleReach,
+                cupBottomY
+        );
+    }
+
+    private RectF inverseRotateRect(@NonNull RectF rect, float degrees, float pivotX, float pivotY) {
+        float radians = (float) Math.toRadians(-degrees);
+        float cos = (float) Math.cos(radians);
+        float sin = (float) Math.sin(radians);
+
+        float[] xs = new float[]{
+                rect.left, rect.right, rect.right, rect.left
+        };
+        float[] ys = new float[]{
+                rect.top, rect.top, rect.bottom, rect.bottom
+        };
+
+        float minX = Float.MAX_VALUE;
+        float minY = Float.MAX_VALUE;
+        float maxX = -Float.MAX_VALUE;
+        float maxY = -Float.MAX_VALUE;
+
+        for (int i = 0; i < 4; i++) {
+            float dx = xs[i] - pivotX;
+            float dy = ys[i] - pivotY;
+            float rx = pivotX + (dx * cos) - (dy * sin);
+            float ry = pivotY + (dx * sin) + (dy * cos);
+            minX = Math.min(minX, rx);
+            minY = Math.min(minY, ry);
+            maxX = Math.max(maxX, rx);
+            maxY = Math.max(maxY, ry);
+        }
+        return new RectF(minX, minY, maxX, maxY);
     }
 
     private void notifyStateChanged() {

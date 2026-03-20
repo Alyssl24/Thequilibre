@@ -12,6 +12,13 @@ import androidx.annotation.Nullable;
 
 public class CupView extends View {
 
+    private static final int CUP_BASE_COLOR = 0xFFB5651D;
+    private static final int CUP_RIM_BASE_COLOR = 0xFFD38A45;
+    private static final int CUP_HANDLE_BASE_COLOR = 0xFF8C4A10;
+    private static final int CUP_HIT_COLOR = 0xFFD15743;
+    private static final int CUP_HIT_RIM_COLOR = 0xFFE17466;
+    private static final int CUP_HIT_HANDLE_COLOR = 0xFFAA3A2B;
+
     private final Paint cupPaint = new Paint(Paint.ANTI_ALIAS_FLAG);
     private final Paint cupRimPaint = new Paint(Paint.ANTI_ALIAS_FLAG);
     private final Paint cupHandlePaint = new Paint(Paint.ANTI_ALIAS_FLAG);
@@ -35,11 +42,11 @@ public class CupView extends View {
     }
 
     private void init() {
-        cupPaint.setColor(0xFFB5651D);
-        cupRimPaint.setColor(0xFFD38A45);
+        cupPaint.setColor(CUP_BASE_COLOR);
+        cupRimPaint.setColor(CUP_RIM_BASE_COLOR);
         cupRimPaint.setStyle(Paint.Style.FILL);
         cupHandlePaint.setStyle(Paint.Style.STROKE);
-        cupHandlePaint.setColor(0xFF8C4A10);
+        cupHandlePaint.setColor(CUP_HANDLE_BASE_COLOR);
         setClickable(false);
         setFocusable(false);
         setEnabled(false);
@@ -81,8 +88,12 @@ public class CupView extends View {
         float topInset = cupWidth * 0.08f;
         float bottomInset = cupWidth * 0.20f;
         float rimHeight = Math.max(dpToPx(3f), cupHeight * 0.08f);
+        boolean isHitFlash = batonView.isDangerFlashActive();
 
         cupHandlePaint.setStrokeWidth(Math.max(dpToPx(2f), cupWidth * 0.06f));
+        cupPaint.setColor(isHitFlash ? CUP_HIT_COLOR : CUP_BASE_COLOR);
+        cupRimPaint.setColor(isHitFlash ? CUP_HIT_RIM_COLOR : CUP_RIM_BASE_COLOR);
+        cupHandlePaint.setColor(isHitFlash ? CUP_HIT_HANDLE_COLOR : CUP_HANDLE_BASE_COLOR);
 
         canvas.save();
         canvas.rotate(rotationDegrees, getWidth() / 2f, currentY);
@@ -120,6 +131,10 @@ public class CupView extends View {
         );
         canvas.drawPath(handlePath, cupHandlePaint);
         canvas.restore();
+
+        if (isHitFlash) {
+            postInvalidateOnAnimation();
+        }
     }
 
     @Override
