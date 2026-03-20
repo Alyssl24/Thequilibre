@@ -17,7 +17,10 @@ public class BatonView extends View {
     private float maxY;
     private float currentY;
     private float batonHeight;
+    private float batonMargin;
+    private float selectionPadding;
     private boolean isInitialized;
+    private boolean isDragging;
 
     public BatonView(Context context) {
         super(context);
@@ -37,6 +40,8 @@ public class BatonView extends View {
     private void init() {
         paint.setColor(0xFF2F2F2F);
         batonHeight = dpToPx(14f);
+        batonMargin = dpToPx(12f);
+        selectionPadding = dpToPx(20f);
         setClickable(true);
     }
 
@@ -60,8 +65,8 @@ public class BatonView extends View {
     @Override
     protected void onDraw(@NonNull Canvas canvas) {
         super.onDraw(canvas);
-        float left = dpToPx(12f);
-        float right = getWidth() - dpToPx(12f);
+        float left = batonMargin;
+        float right = getWidth() - batonMargin;
         float top = currentY - batonHeight / 2f;
         float bottom = currentY + batonHeight / 2f;
         canvas.drawRoundRect(left, top, right, bottom, batonHeight / 2f, batonHeight / 2f, paint);
@@ -73,11 +78,36 @@ public class BatonView extends View {
             return false;
         }
         int action = event.getActionMasked();
-        if (action == MotionEvent.ACTION_DOWN || action == MotionEvent.ACTION_MOVE) {
+        if (action == MotionEvent.ACTION_DOWN) {
+            isDragging = isTouchOnBaton(event.getX(), event.getY());
+            if (isDragging) {
+                moveTo(event.getY());
+            }
+            return isDragging;
+        }
+
+        if (action == MotionEvent.ACTION_MOVE) {
+            if (!isDragging) {
+                return false;
+            }
             moveTo(event.getY());
             return true;
         }
+
+        if (action == MotionEvent.ACTION_UP || action == MotionEvent.ACTION_CANCEL) {
+            boolean wasDragging = isDragging;
+            isDragging = false;
+            return wasDragging;
+        }
         return super.onTouchEvent(event);
+    }
+
+    private boolean isTouchOnBaton(float x, float y) {
+        float left = batonMargin - selectionPadding;
+        float right = getWidth() - batonMargin + selectionPadding;
+        float top = currentY - batonHeight / 2f - selectionPadding;
+        float bottom = currentY + batonHeight / 2f + selectionPadding;
+        return x >= left && x <= right && y >= top && y <= bottom;
     }
 
     private float clamp(float value) {
