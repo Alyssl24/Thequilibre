@@ -8,4 +8,16 @@
     <string name="difficulty_medium">Medium</string>
     <string name="difficulty_hard">Hard</string>
     <string name="selected_difficulty_label">Difficulty: %1$s</string>
+    <string name="home_about_link">About us</string>
+    <string name="about_back_home">← Back to home</string>
+    <string name="about_title">About us</string>
+    <string name="about_project_description">Thequilibre is a game project focused on balance, responsiveness, and clean gameplay iterations. Meet the team behind the project.</string>
+    <string name="about_linkedin_badge_desc">Open LinkedIn profile</string>
+    <string name="about_github_badge_desc">Open GitHub profile</string>
+    <string name="about_corentin_name">Corentin JÉRÉ</string>
+    <string name="about_corentin_role">Role: Technical Lead, Git Manager and Developer</string>
+    <string name="about_alex_name">Alex LECOMTE</string>
+    <string name="about_alex_role">Role: Developer</string>
+    <string name="about_alyssia_name">Alyssia LECLERC</string>
+    <string name="about_alyssia_role">Role: Developer, Product Owner</string>
 </resources>
