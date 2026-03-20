@@ -114,11 +114,18 @@
 
     </LinearLayout>
 
+    <FrameLayout
+        android:id="@+id/obstacle_overlay"
+        android:layout_width="match_parent"
+        android:layout_height="match_parent"
+        android:clickable="false"
+        android:focusable="false"
+        android:importantForAccessibility="no" />
+
     <com.example.thequilibre.BatonView
         android:id="@+id/baton_view"
         android:layout_width="match_parent"
         android:layout_height="match_parent" />
 
 </FrameLayout>
-
 
