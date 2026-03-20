@@ -1,0 +1,245 @@
+<?xml version="1.0" encoding="utf-8"?>
+<ScrollView xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    android:id="@+id/about_root"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    android:background="#F3EEF6"
+    android:fillViewport="true">
+
+    <LinearLayout
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:orientation="vertical"
+        android:padding="20dp">
+
+        <TextView
+            android:id="@+id/about_back_link"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:clickable="true"
+            android:focusable="true"
+            android:paddingBottom="8dp"
+            android:text="@string/about_back_home"
+            android:textColor="#4A4458"
+            android:textSize="16sp"
+            android:textStyle="bold" />
+
+        <TextView
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="6dp"
+            android:text="@string/about_title"
+            android:textColor="#1F1A24"
+            android:textSize="30sp"
+            android:textStyle="bold" />
+
+        <TextView
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="8dp"
+            android:text="@string/about_project_description"
+            android:textColor="#4A4458"
+            android:textSize="15sp" />
+
+        <com.google.android.material.card.MaterialCardView
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="22dp"
+            app:cardBackgroundColor="@android:color/white"
+            app:cardCornerRadius="16dp"
+            app:cardElevation="2dp"
+            app:strokeColor="#E4DCEB"
+            app:strokeWidth="1dp">
+
+            <LinearLayout
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:orientation="vertical"
+                android:padding="16dp">
+
+                <TextView
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:text="@string/about_corentin_name"
+                    android:textColor="#1F1A24"
+                    android:textSize="20sp"
+                    android:textStyle="bold" />
+
+                <TextView
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:layout_marginTop="6dp"
+                    android:text="@string/about_corentin_role"
+                    android:textColor="#4A4458"
+                    android:textSize="14sp" />
+
+                <LinearLayout
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:layout_marginTop="12dp"
+                    android:orientation="horizontal">
+
+                    <androidx.appcompat.widget.AppCompatImageButton
+                        android:id="@+id/corentin_linkedin"
+                        android:layout_width="0dp"
+                        android:layout_height="36dp"
+                        android:layout_marginEnd="8dp"
+                        android:layout_weight="1"
+                        android:adjustViewBounds="true"
+                        android:background="@android:color/transparent"
+                        android:contentDescription="@string/about_linkedin_badge_desc"
+                        android:padding="0dp"
+                        android:scaleType="fitCenter"
+                        android:src="@drawable/badge_linkedin" />
+
+                    <androidx.appcompat.widget.AppCompatImageButton
+                        android:id="@+id/corentin_github"
+                        android:layout_width="0dp"
+                        android:layout_height="36dp"
+                        android:layout_weight="1"
+                        android:adjustViewBounds="true"
+                        android:background="@android:color/transparent"
+                        android:contentDescription="@string/about_github_badge_desc"
+                        android:padding="0dp"
+                        android:scaleType="fitCenter"
+                        android:src="@drawable/badge_github" />
+                </LinearLayout>
+            </LinearLayout>
+        </com.google.android.material.card.MaterialCardView>
+
+        <com.google.android.material.card.MaterialCardView
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="14dp"
+            app:cardBackgroundColor="@android:color/white"
+            app:cardCornerRadius="16dp"
+            app:cardElevation="2dp"
+            app:strokeColor="#E4DCEB"
+            app:strokeWidth="1dp">
+
+            <LinearLayout
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:orientation="vertical"
+                android:padding="16dp">
+
+                <TextView
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:text="@string/about_alex_name"
+                    android:textColor="#1F1A24"
+                    android:textSize="20sp"
+                    android:textStyle="bold" />
+
+                <TextView
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:layout_marginTop="6dp"
+                    android:text="@string/about_alex_role"
+                    android:textColor="#4A4458"
+                    android:textSize="14sp" />
+
+                <LinearLayout
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:layout_marginTop="12dp"
+                    android:orientation="horizontal">
+
+                    <androidx.appcompat.widget.AppCompatImageButton
+                        android:id="@+id/alex_linkedin"
+                        android:layout_width="0dp"
+                        android:layout_height="36dp"
+                        android:layout_marginEnd="8dp"
+                        android:layout_weight="1"
+                        android:adjustViewBounds="true"
+                        android:background="@android:color/transparent"
+                        android:contentDescription="@string/about_linkedin_badge_desc"
+                        android:padding="0dp"
+                        android:scaleType="fitCenter"
+                        android:src="@drawable/badge_linkedin" />
+
+                    <androidx.appcompat.widget.AppCompatImageButton
+                        android:id="@+id/alex_github"
+                        android:layout_width="0dp"
+                        android:layout_height="36dp"
+                        android:layout_weight="1"
+                        android:adjustViewBounds="true"
+                        android:background="@android:color/transparent"
+                        android:contentDescription="@string/about_github_badge_desc"
+                        android:padding="0dp"
+                        android:scaleType="fitCenter"
+                        android:src="@drawable/badge_github" />
+                </LinearLayout>
+            </LinearLayout>
+        </com.google.android.material.card.MaterialCardView>
+
+        <com.google.android.material.card.MaterialCardView
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="14dp"
+            android:layout_marginBottom="10dp"
+            app:cardBackgroundColor="@android:color/white"
+            app:cardCornerRadius="16dp"
+            app:cardElevation="2dp"
+            app:strokeColor="#E4DCEB"
+            app:strokeWidth="1dp">
+
+            <LinearLayout
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:orientation="vertical"
+                android:padding="16dp">
+
+                <TextView
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:text="@string/about_alyssia_name"
+                    android:textColor="#1F1A24"
+                    android:textSize="20sp"
+                    android:textStyle="bold" />
+
+                <TextView
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:layout_marginTop="6dp"
+                    android:text="@string/about_alyssia_role"
+                    android:textColor="#4A4458"
+                    android:textSize="14sp" />
+
+                <LinearLayout
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:layout_marginTop="12dp"
+                    android:orientation="horizontal">
+
+                    <androidx.appcompat.widget.AppCompatImageButton
+                        android:id="@+id/alyssia_linkedin"
+                        android:layout_width="0dp"
+                        android:layout_height="36dp"
+                        android:layout_marginEnd="8dp"
+                        android:layout_weight="1"
+                        android:adjustViewBounds="true"
+                        android:background="@android:color/transparent"
+                        android:contentDescription="@string/about_linkedin_badge_desc"
+                        android:padding="0dp"
+                        android:scaleType="fitCenter"
+                        android:src="@drawable/badge_linkedin" />
+
+                    <androidx.appcompat.widget.AppCompatImageButton
+                        android:id="@+id/alyssia_github"
+                        android:layout_width="0dp"
+                        android:layout_height="36dp"
+                        android:layout_weight="1"
+                        android:adjustViewBounds="true"
+                        android:background="@android:color/transparent"
+                        android:contentDescription="@string/about_github_badge_desc"
+                        android:padding="0dp"
+                        android:scaleType="fitCenter"
+                        android:src="@drawable/badge_github" />
+                </LinearLayout>
+            </LinearLayout>
+        </com.google.android.material.card.MaterialCardView>
+
+    </LinearLayout>
+</ScrollView>

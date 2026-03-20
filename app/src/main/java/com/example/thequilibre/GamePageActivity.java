@@ -7,12 +7,15 @@ import android.hardware.SensorManager;
 import android.os.Bundle;
 import android.view.Surface;
 import android.view.View;
+import android.widget.FrameLayout;
 
 import androidx.activity.EdgeToEdge;
 import androidx.appcompat.app.AppCompatActivity;
 import androidx.core.graphics.Insets;
 import androidx.core.view.ViewCompat;
 import androidx.core.view.WindowInsetsCompat;
+
+import com.example.thequilibre.model.GameView;
 
 public class GamePageActivity extends AppCompatActivity {
 
@@ -30,6 +33,49 @@ public class GamePageActivity extends AppCompatActivity {
     private final float[] remappedRotationMatrix = new float[9];
     private final float[] orientationAngles = new float[3];
     private float filteredRotationDegrees;
+
+    @Override
+    protected void onResume() {
+        super.onResume();
+        if (sensorManager != null && rotationVectorSensor != null) {
+            sensorManager.registerListener(
+                    orientationListener,
+                    rotationVectorSensor,
+                    SensorManager.SENSOR_DELAY_GAME
+            );
+        }
+    }
+
+    private float getCenterYInViewCoordinates(View source, View target) {
+        int[] sourceLocation = new int[2];
+        int[] targetLocation = new int[2];
+        source.getLocationOnScreen(sourceLocation);
+        target.getLocationOnScreen(targetLocation);
+        return (sourceLocation[1] - targetLocation[1]) + (source.getHeight() / 2f);
+    }
+
+    @Override
+    protected void onPause() {
+        super.onPause();
+        if (sensorManager != null) {
+            sensorManager.unregisterListener(orientationListener);
+        }
+    }
+
+    private void configureBatonBounds(BatonView batonView, View space1, View space2) {
+        float ySpace1 = getCenterYInViewCoordinates(space1, batonView);
+        float ySpace2 = getCenterYInViewCoordinates(space2, batonView);
+
+        float minY = Math.min(ySpace1, ySpace2);
+        float maxY = Math.max(ySpace1, ySpace2);
+
+        batonView.setMovementBounds(minY, maxY);
+        batonView.moveTo(ySpace1);
+    }
+
+    private float clamp(float value, float min, float max) {
+        return Math.max(min, Math.min(max, value));
+    }
 
     private final SensorEventListener orientationListener = new SensorEventListener() {
         @Override
@@ -72,8 +118,13 @@ public class GamePageActivity extends AppCompatActivity {
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
+
         EdgeToEdge.enable(this);
         setContentView(R.layout.activity_game_page);
+
+        FrameLayout container = findViewById(R.id.game_container);
+        GameView gameView = new GameView(this);
+        container.addView(gameView);
 
         View root = findViewById(R.id.main);
         batonView = findViewById(R.id.baton_view);
@@ -85,7 +136,6 @@ public class GamePageActivity extends AppCompatActivity {
         if (sensorManager != null) {
             rotationVectorSensor = sensorManager.getDefaultSensor(Sensor.TYPE_ROTATION_VECTOR);
         }
-
         ViewCompat.setOnApplyWindowInsetsListener(root, (gamePageRoot, insets) -> {
             Insets systemBars = insets.getInsets(WindowInsetsCompat.Type.systemBars());
             gamePageRoot.setPadding(systemBars.left, systemBars.top, systemBars.right, systemBars.bottom);
@@ -95,55 +145,11 @@ public class GamePageActivity extends AppCompatActivity {
             });
             return insets;
         });
-
-        root.addOnLayoutChangeListener((v, left, top, right, bottom, oldLeft, oldTop, oldRight, oldBottom) ->
-        {
+        root.addOnLayoutChangeListener((v, left, top, right, bottom,
+                                        oldLeft, oldTop, oldRight, oldBottom) -> {
             configureBatonBounds(batonView, space1, space2);
             configureCupWidth(batonView, square11);
         });
-    }
-
-    @Override
-    protected void onResume() {
-        super.onResume();
-        if (sensorManager != null && rotationVectorSensor != null) {
-            sensorManager.registerListener(
-                    orientationListener,
-                    rotationVectorSensor,
-                    SensorManager.SENSOR_DELAY_GAME
-            );
-        }
-    }
-
-    @Override
-    protected void onPause() {
-        super.onPause();
-        if (sensorManager != null) {
-            sensorManager.unregisterListener(orientationListener);
-        }
-    }
-
-    private void configureBatonBounds(BatonView batonView, View space1, View space2) {
-        float ySpace1 = getCenterYInViewCoordinates(space1, batonView);
-        float ySpace2 = getCenterYInViewCoordinates(space2, batonView);
-
-        float minY = Math.min(ySpace1, ySpace2);
-        float maxY = Math.max(ySpace1, ySpace2);
-
-        batonView.setMovementBounds(minY, maxY);
-        batonView.moveTo(ySpace1);
-    }
-
-    private float getCenterYInViewCoordinates(View source, View target) {
-        int[] sourceLocation = new int[2];
-        int[] targetLocation = new int[2];
-        source.getLocationOnScreen(sourceLocation);
-        target.getLocationOnScreen(targetLocation);
-        return (sourceLocation[1] - targetLocation[1]) + (source.getHeight() / 2f);
-    }
-
-    private float clamp(float value, float min, float max) {
-        return Math.max(min, Math.min(max, value));
     }
 
     private void configureCupWidth(BatonView batonView, View square11) {

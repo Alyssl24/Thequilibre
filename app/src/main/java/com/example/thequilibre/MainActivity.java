@@ -2,6 +2,7 @@ package com.example.thequilibre;
 
 import android.os.Bundle;
 import android.view.WindowManager;
+import android.widget.FrameLayout;
 
 import androidx.activity.EdgeToEdge;
 import androidx.appcompat.app.AppCompatActivity;
@@ -16,6 +17,6 @@ public class MainActivity extends AppCompatActivity {
         EdgeToEdge.enable(this);
         getWindow().setFlags(WindowManager.LayoutParams.FLAG_FULLSCREEN,
                 WindowManager.LayoutParams.FLAG_FULLSCREEN);
-        setContentView(new GameView(this));
+        setContentView(R.layout.activity_home_page);
     }
 }
