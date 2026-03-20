@@ -11,6 +11,11 @@ import androidx.core.view.WindowInsetsCompat;
 
 public class GamePageActivity extends AppCompatActivity {
 
+    public static final String DIFFICULTY_MEDIUM = "Medium";
+    public static final String DIFFICULTY_EASY = "Easy";
+    public static final String DIFFICULTY_HARD = "Hard";
+    public static final String EXTRA_DIFFICULTY = "";
+
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
