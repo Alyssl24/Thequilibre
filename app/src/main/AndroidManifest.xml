@@ -12,6 +12,9 @@
         android:supportsRtl="true"
         android:theme="@style/Theme.Thequilibre">
         <activity
+            android:name=".AboutUsActivity"
+            android:exported="false" />
+        <activity
             android:name=".GamePageActivity"
             android:exported="false"
             android:screenOrientation="portrait" />
