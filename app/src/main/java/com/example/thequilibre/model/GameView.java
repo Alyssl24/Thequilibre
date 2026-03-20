@@ -24,6 +24,9 @@ public class GameView extends SurfaceView implements SurfaceHolder.Callback {
 
         getHolder().addCallback(this);
 
+        setZOrderOnTop(true);
+        getHolder().setFormat(android.graphics.PixelFormat.TRANSLUCENT);
+
         paint = new Paint();
         paint.setAntiAlias(true);
         paint.setTextSize(40);
@@ -79,7 +82,6 @@ public class GameView extends SurfaceView implements SurfaceHolder.Callback {
 
         if (canvas == null) return;
 
-        canvas.drawRGB(30, 30, 30);
 
         float left = 50;
         float top = 100;
