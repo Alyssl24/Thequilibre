@@ -39,13 +39,21 @@ public class GamePageActivity extends AppCompatActivity {
     }
 
     private void configureBatonBounds(BatonView batonView, View space1, View space2) {
-        float ySpace1 = space1.getY() + (space1.getHeight() / 2f);
-        float ySpace2 = space2.getY() + (space2.getHeight() / 2f);
+        float ySpace1 = getCenterYInViewCoordinates(space1, batonView);
+        float ySpace2 = getCenterYInViewCoordinates(space2, batonView);
 
         float minY = Math.min(ySpace1, ySpace2);
         float maxY = Math.max(ySpace1, ySpace2);
 
         batonView.setMovementBounds(minY, maxY);
         batonView.moveTo(ySpace1);
+    }
+
+    private float getCenterYInViewCoordinates(View source, View target) {
+        int[] sourceLocation = new int[2];
+        int[] targetLocation = new int[2];
+        source.getLocationOnScreen(sourceLocation);
+        target.getLocationOnScreen(targetLocation);
+        return (sourceLocation[1] - targetLocation[1]) + (source.getHeight() / 2f);
     }
 }
