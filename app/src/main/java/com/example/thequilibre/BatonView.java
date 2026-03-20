@@ -3,6 +3,7 @@ package com.example.thequilibre;
 import android.content.Context;
 import android.graphics.Canvas;
 import android.graphics.Paint;
+import android.graphics.Path;
 import android.graphics.RectF;
 import android.os.SystemClock;
 import android.util.AttributeSet;
@@ -18,6 +19,7 @@ public class BatonView extends View {
     private static final long HIT_FLASH_DURATION_MS = 180L;
 
     private final Paint paint = new Paint(Paint.ANTI_ALIAS_FLAG);
+    private final Paint cupHandleCollisionPaint = new Paint(Paint.ANTI_ALIAS_FLAG);
     private static final float MAX_BATON_ROTATION_DEGREES = 50f;
     private static final float CUP_ACCELERATION = 0.015f;
     private static final float CUP_FRICTION = 0.92f;
@@ -59,6 +61,7 @@ public class BatonView extends View {
 
     private void init() {
         paint.setColor(0xFF2F2F2F);
+        cupHandleCollisionPaint.setStyle(Paint.Style.STROKE);
 
         batonHeight = dpToPx(14f);
         batonMargin = dpToPx(12f);
@@ -132,9 +135,18 @@ public class BatonView extends View {
         RectF localRect = new RectF(rectOnScreen);
         localRect.offset(-location[0], -location[1]);
 
-        RectF unrotatedObstacleRect = inverseRotateRect(localRect, rotationDegrees, getWidth() / 2f, currentY);
-        RectF cupBounds = getCupBoundsUnrotated();
-        return RectF.intersects(cupBounds, unrotatedObstacleRect);
+        Path cupCollisionPath = buildCupCollisionPathUnrotated();
+        Path unrotatedObstaclePath = inverseRotateRectToPath(localRect, rotationDegrees, getWidth() / 2f, currentY);
+        RectF cupBounds = new RectF();
+        RectF obstacleBounds = new RectF();
+        cupCollisionPath.computeBounds(cupBounds, true);
+        unrotatedObstaclePath.computeBounds(obstacleBounds, true);
+        if (!RectF.intersects(cupBounds, obstacleBounds)) {
+            return false;
+        }
+        Path intersection = new Path();
+        boolean hasIntersection = intersection.op(cupCollisionPath, unrotatedObstaclePath, Path.Op.INTERSECT);
+        return hasIntersection && !intersection.isEmpty();
     }
 
     public void setStateListener(@Nullable StateListener stateListener) {
@@ -237,7 +249,7 @@ public class BatonView extends View {
         return dp * getResources().getDisplayMetrics().density;
     }
 
-    private RectF getCupBoundsUnrotated() {
+    private Path buildCupCollisionPathUnrotated() {
         float left = batonMargin;
         float right = getWidth() - batonMargin;
         float top = currentY - (batonHeight / 2f);
@@ -249,17 +261,51 @@ public class BatonView extends View {
         float cupTopY = cupBottomY - cupHeight;
         float cupLeft = cupCenterX - (cupWidth / 2f);
         float cupRight = cupCenterX + (cupWidth / 2f);
+        float topInset = cupWidth * 0.08f;
+        float bottomInset = cupWidth * 0.20f;
         float rimHeight = Math.max(dpToPx(3f), cupHeight * 0.08f);
+        float handleStrokeWidth = Math.max(dpToPx(2f), cupWidth * 0.06f);
+        cupHandleCollisionPaint.setStrokeWidth(handleStrokeWidth);
 
-        return new RectF(
-                cupLeft,
+        Path cupPath = new Path();
+
+        Path bodyPath = new Path();
+        bodyPath.moveTo(cupLeft + topInset, cupTopY);
+        bodyPath.lineTo(cupRight - topInset, cupTopY);
+        bodyPath.lineTo(cupRight - bottomInset, cupBottomY);
+        bodyPath.lineTo(cupLeft + bottomInset, cupBottomY);
+        bodyPath.close();
+        cupPath.addPath(bodyPath);
+
+        RectF rimRect = new RectF(
+                cupLeft + (topInset * 0.45f),
                 cupTopY - (rimHeight * 0.35f),
-                cupRight + handleReach,
-                cupBottomY
+                cupRight - (topInset * 0.45f),
+                cupTopY + rimHeight
         );
+        cupPath.addRoundRect(rimRect, rimHeight, rimHeight, Path.Direction.CW);
+
+        Path handlePath = new Path();
+        float handleStartX = cupRight - (topInset * 0.1f);
+        float handleTopY = cupTopY + (cupHeight * 0.26f);
+        float handleBottomY = cupTopY + (cupHeight * 0.74f);
+        handlePath.moveTo(handleStartX, handleTopY);
+        handlePath.cubicTo(
+                cupRight + handleReach,
+                cupTopY + (cupHeight * 0.24f),
+                cupRight + handleReach,
+                cupTopY + (cupHeight * 0.76f),
+                handleStartX,
+                handleBottomY
+        );
+        Path handleStrokePath = new Path();
+        cupHandleCollisionPaint.getFillPath(handlePath, handleStrokePath);
+        cupPath.addPath(handleStrokePath);
+
+        return cupPath;
     }
 
-    private RectF inverseRotateRect(@NonNull RectF rect, float degrees, float pivotX, float pivotY) {
+    private Path inverseRotateRectToPath(@NonNull RectF rect, float degrees, float pivotX, float pivotY) {
         float radians = (float) Math.toRadians(-degrees);
         float cos = (float) Math.cos(radians);
         float sin = (float) Math.sin(radians);
@@ -271,22 +317,20 @@ public class BatonView extends View {
                 rect.top, rect.top, rect.bottom, rect.bottom
         };
 
-        float minX = Float.MAX_VALUE;
-        float minY = Float.MAX_VALUE;
-        float maxX = -Float.MAX_VALUE;
-        float maxY = -Float.MAX_VALUE;
-
+        Path path = new Path();
         for (int i = 0; i < 4; i++) {
             float dx = xs[i] - pivotX;
             float dy = ys[i] - pivotY;
             float rx = pivotX + (dx * cos) - (dy * sin);
             float ry = pivotY + (dx * sin) + (dy * cos);
-            minX = Math.min(minX, rx);
-            minY = Math.min(minY, ry);
-            maxX = Math.max(maxX, rx);
-            maxY = Math.max(maxY, ry);
+            if (i == 0) {
+                path.moveTo(rx, ry);
+            } else {
+                path.lineTo(rx, ry);
+            }
         }
-        return new RectF(minX, minY, maxX, maxY);
+        path.close();
+        return path;
     }
 
     private void notifyStateChanged() {
