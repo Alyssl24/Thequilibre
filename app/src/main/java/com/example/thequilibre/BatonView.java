@@ -18,9 +18,11 @@ public class BatonView extends View {
     private float currentY;
     private float batonHeight;
     private float batonMargin;
-    private float selectionPadding;
+    private float rotationDegrees;
     private boolean isInitialized;
     private boolean isDragging;
+    private float touchStartY;
+    private float batonStartY;
 
     public BatonView(Context context) {
         super(context);
@@ -41,7 +43,6 @@ public class BatonView extends View {
         paint.setColor(0xFF2F2F2F);
         batonHeight = dpToPx(14f);
         batonMargin = dpToPx(12f);
-        selectionPadding = dpToPx(20f);
         setClickable(true);
     }
 
@@ -62,6 +63,11 @@ public class BatonView extends View {
         invalidate();
     }
 
+    public void setBatonRotationDegrees(float rotationDegrees) {
+        this.rotationDegrees = rotationDegrees;
+        invalidate();
+    }
+
     @Override
     protected void onDraw(@NonNull Canvas canvas) {
         super.onDraw(canvas);
@@ -69,7 +75,11 @@ public class BatonView extends View {
         float right = getWidth() - batonMargin;
         float top = currentY - batonHeight / 2f;
         float bottom = currentY + batonHeight / 2f;
+
+        canvas.save();
+        canvas.rotate(rotationDegrees, getWidth() / 2f, currentY);
         canvas.drawRoundRect(left, top, right, bottom, batonHeight / 2f, batonHeight / 2f, paint);
+        canvas.restore();
     }
 
     @Override
@@ -79,18 +89,18 @@ public class BatonView extends View {
         }
         int action = event.getActionMasked();
         if (action == MotionEvent.ACTION_DOWN) {
-            isDragging = isTouchOnBaton(event.getX(), event.getY());
-            if (isDragging) {
-                moveTo(event.getY());
-            }
-            return isDragging;
+            isDragging = true;
+            touchStartY = event.getY();
+            batonStartY = currentY;
+            return true;
         }
 
         if (action == MotionEvent.ACTION_MOVE) {
             if (!isDragging) {
                 return false;
             }
-            moveTo(event.getY());
+            float deltaY = event.getY() - touchStartY;
+            moveTo(batonStartY + deltaY);
             return true;
         }
 
@@ -100,14 +110,6 @@ public class BatonView extends View {
             return wasDragging;
         }
         return super.onTouchEvent(event);
-    }
-
-    private boolean isTouchOnBaton(float x, float y) {
-        float left = batonMargin - selectionPadding;
-        float right = getWidth() - batonMargin + selectionPadding;
-        float top = currentY - batonHeight / 2f - selectionPadding;
-        float bottom = currentY + batonHeight / 2f + selectionPadding;
-        return x >= left && x <= right && y >= top && y <= bottom;
     }
 
     private float clamp(float value) {
