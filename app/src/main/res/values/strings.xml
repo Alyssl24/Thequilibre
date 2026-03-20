@@ -9,6 +9,7 @@
     <string name="difficulty_hard">Hard</string>
     <string name="selected_difficulty_label">Difficulty: %1$s</string>
     <string name="home_about_link">About us</string>
+    <string name="home_history_link">History</string>
     <string name="about_back_home">← Back to home</string>
     <string name="about_title">About us</string>
     <string name="about_project_description">Thequilibre is a game project focused on balance, responsiveness, and clean gameplay iterations. Meet the team behind the project.</string>
@@ -42,4 +43,11 @@
     <string name="rules_tip_title">Pro tip</string>
     <string name="rules_tip_text">Small controlled motions are safer than sudden corrections.</string>
     <string name="rules_footer_note">Good luck, and keep your tea steady.</string>
+    <string name="history_back_home">Back to home</string>
+    <string name="history_title">Score history</string>
+    <string name="history_subtitle">Track your previous runs and compare your performance across difficulties.</string>
+    <string name="history_score_label">Score %1$d</string>
+    <string name="history_unknown_date">Unknown date</string>
+    <string name="history_empty_title">No games yet</string>
+    <string name="history_empty_subtitle">Play your first run to start building your score history.</string>
 </resources>
