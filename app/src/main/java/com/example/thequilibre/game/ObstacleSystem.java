@@ -24,6 +24,8 @@ public class ObstacleSystem {
 
     public interface Listener {
         void onDangerousCollision(int slotIndex);
+
+        void onObstacleValidated(int slotIndex);
     }
 
     private enum ObstacleState {
@@ -343,6 +345,10 @@ public class ObstacleSystem {
                     continue;
                 }
                 if ((nowMs - obstacle.dangerousSinceMs) >= obstacle.dangerDurationMs) {
+                    if (!obstacle.validationDispatched) {
+                        obstacle.validationDispatched = true;
+                        listener.onObstacleValidated(slotIndex);
+                    }
                     removeObstacle(i);
                 }
             }
@@ -392,6 +398,7 @@ public class ObstacleSystem {
         final long dangerDurationMs;
         long spawnedAtMs;
         long dangerousSinceMs;
+        boolean validationDispatched;
         ObstacleState state = ObstacleState.GROWING;
 
         ObstacleInstance(int slotIndex,
