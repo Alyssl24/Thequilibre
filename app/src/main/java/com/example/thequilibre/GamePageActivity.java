@@ -62,7 +62,7 @@ public class GamePageActivity extends AppCompatActivity {
         }
     }
 
-    private void configureBatonBounds(BatonView batonView, View space1, View space2) {
+    private void configureBatonBounds(BatonView batonView, View space1, View space2, View referenceSquare) {
         float ySpace1 = getCenterYInViewCoordinates(space1, batonView);
         float ySpace2 = getCenterYInViewCoordinates(space2, batonView);
 
@@ -70,6 +70,7 @@ public class GamePageActivity extends AppCompatActivity {
         float maxY = Math.max(ySpace1, ySpace2);
 
         batonView.setMovementBounds(minY, maxY);
+        batonView.setCupSizeFromSquare(referenceSquare.getWidth(), referenceSquare.getHeight());
         batonView.moveTo(ySpace1);
     }
 
@@ -130,6 +131,7 @@ public class GamePageActivity extends AppCompatActivity {
         batonView = findViewById(R.id.baton_view);
         View space1 = findViewById(R.id.space_1);
         View space2 = findViewById(R.id.space_2);
+        View referenceSquare = findViewById(R.id.square_1_1);
 
         sensorManager = (SensorManager) getSystemService(SENSOR_SERVICE);
         if (sensorManager != null) {
@@ -142,7 +144,7 @@ public class GamePageActivity extends AppCompatActivity {
         });
         root.addOnLayoutChangeListener((v, left, top, right, bottom,
                                         oldLeft, oldTop, oldRight, oldBottom) ->
-                configureBatonBounds(batonView, space1, space2)
+                configureBatonBounds(batonView, space1, space2, referenceSquare)
         );
     }
 }
