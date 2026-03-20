@@ -12,6 +12,10 @@
         android:supportsRtl="true"
         android:theme="@style/Theme.Thequilibre">
         <activity
+            android:name=".EndGameActivity"
+            android:exported="false"
+            android:screenOrientation="portrait" />
+        <activity
             android:name=".HistoryActivity"
             android:exported="false" />
         <activity
