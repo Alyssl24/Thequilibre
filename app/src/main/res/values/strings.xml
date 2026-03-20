@@ -3,4 +3,9 @@
     <string name="home_title">Welcome to the Thequilibre Game !</string>
     <string name="home_subtitle">Ready to dodge every square, while keeping your tea cool with care?</string>
     <string name="home_play_button">Play</string>
+    <string name="difficulty_choice_title">Difficulty Choice :</string>
+    <string name="difficulty_easy">Easy</string>
+    <string name="difficulty_medium">Medium</string>
+    <string name="difficulty_hard">Hard</string>
+    <string name="selected_difficulty_label">Difficulty: %1$s</string>
 </resources>
