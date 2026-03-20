@@ -4,7 +4,6 @@ import android.content.Context;
 import android.graphics.Canvas;
 import android.graphics.Paint;
 import android.graphics.Path;
-import android.graphics.RectF;
 import android.util.AttributeSet;
 import android.view.MotionEvent;
 import android.view.View;
@@ -14,23 +13,26 @@ import androidx.annotation.Nullable;
 
 public class BatonView extends View {
 
-    private final Paint batonPaint = new Paint(Paint.ANTI_ALIAS_FLAG);
+    private final Paint paint = new Paint(Paint.ANTI_ALIAS_FLAG);
     private final Paint cupPaint = new Paint(Paint.ANTI_ALIAS_FLAG);
-    private final Paint teaPaint = new Paint(Paint.ANTI_ALIAS_FLAG);
-    private final Paint handlePaint = new Paint(Paint.ANTI_ALIAS_FLAG);
-    private final Paint steamPaint = new Paint(Paint.ANTI_ALIAS_FLAG);
-    private final Path steamPath = new Path();
-    private final RectF cupRect = new RectF();
-    private final RectF teaRect = new RectF();
-    private final RectF handleRect = new RectF();
+    private final Paint cupRimPaint = new Paint(Paint.ANTI_ALIAS_FLAG);
+    private final Paint cupHandlePaint = new Paint(Paint.ANTI_ALIAS_FLAG);
+    private static final float MAX_BATON_ROTATION_DEGREES = 50f;
+    private static final float CUP_ACCELERATION = 0.015f;
+    private static final float CUP_FRICTION = 0.92f;
+    private static final float CUP_MAX_SPEED = 0.035f;
+
     private float minY;
     private float maxY;
     private float currentY;
     private float batonHeight;
     private float batonMargin;
+    private float cupWidth;
+    private float cupHeight;
+    private float cupInset;
+    private float cupOffsetNormalized;
+    private float cupVelocity;
     private float rotationDegrees;
-    private float cupWidthPx;
-    private float cupHeightPx;
     private boolean isInitialized;
     private boolean isDragging;
     private float touchStartY;
@@ -52,25 +54,31 @@ public class BatonView extends View {
     }
 
     private void init() {
-        batonPaint.setColor(0xFF2F2F2F);
-        cupPaint.setColor(0xFF3B82F6);
-        cupPaint.setStyle(Paint.Style.FILL);
-
-        teaPaint.setColor(0xFFB07A3C);
-        teaPaint.setStyle(Paint.Style.FILL);
-
-        handlePaint.setColor(0xFF3B82F6);
-        handlePaint.setStyle(Paint.Style.STROKE);
-        handlePaint.setStrokeWidth(dpToPx(2f));
-
-        steamPaint.setColor(0x80FFFFFF);
-        steamPaint.setStyle(Paint.Style.STROKE);
-        steamPaint.setStrokeWidth(dpToPx(1.5f));
-        steamPaint.setStrokeCap(Paint.Cap.ROUND);
+        paint.setColor(0xFF2F2F2F);
+        cupPaint.setColor(0xFFB5651D);
+        cupRimPaint.setColor(0xFFD38A45);
+        cupRimPaint.setStyle(Paint.Style.FILL);
+        cupHandlePaint.setStyle(Paint.Style.STROKE);
+        cupHandlePaint.setStrokeWidth(dpToPx(3f));
+        cupHandlePaint.setColor(0xFF8C4A10);
 
         batonHeight = dpToPx(14f);
         batonMargin = dpToPx(12f);
+        cupWidth = dpToPx(40f);
+        cupHeight = dpToPx(32f);
+        cupInset = dpToPx(8f);
         setClickable(true);
+    }
+
+    public void setCupSizeFromSquare(float squareWidth, float squareHeight) {
+        if (squareWidth <= 0f || squareHeight <= 0f) {
+            return;
+        }
+        cupWidth = Math.max(dpToPx(20f), squareWidth * (2f / 3f));
+        cupHeight = Math.max(dpToPx(18f), squareHeight * (2f / 3f));
+        cupInset = Math.max(dpToPx(6f), cupWidth * 0.08f);
+        cupHandlePaint.setStrokeWidth(Math.max(dpToPx(2f), cupWidth * 0.06f));
+        invalidate();
     }
 
     public void setMovementBounds(float minY, float maxY) {
@@ -92,16 +100,18 @@ public class BatonView extends View {
 
     public void setBatonRotationDegrees(float rotationDegrees) {
         this.rotationDegrees = rotationDegrees;
-        invalidate();
-    }
-
-    public void setCupWidthPx(float cupWidthPx) {
-        this.cupWidthPx = cupWidthPx;
-        invalidate();
-    }
-
-    public void setCupHeightPx(float cupHeightPx) {
-        this.cupHeightPx = cupHeightPx;
+        float tilt = clamp(rotationDegrees / MAX_BATON_ROTATION_DEGREES, -1f, 1f);
+        cupVelocity += tilt * CUP_ACCELERATION;
+        cupVelocity = clamp(cupVelocity, -CUP_MAX_SPEED, CUP_MAX_SPEED);
+        cupVelocity *= CUP_FRICTION;
+        cupOffsetNormalized += cupVelocity;
+        if (cupOffsetNormalized < -1f) {
+            cupOffsetNormalized = -1f;
+            cupVelocity = 0f;
+        } else if (cupOffsetNormalized > 1f) {
+            cupOffsetNormalized = 1f;
+            cupVelocity = 0f;
+        }
         invalidate();
     }
 
@@ -115,44 +125,53 @@ public class BatonView extends View {
 
         canvas.save();
         canvas.rotate(rotationDegrees, getWidth() / 2f, currentY);
-        canvas.drawRoundRect(left, top, right, bottom, batonHeight / 2f, batonHeight / 2f, batonPaint);
-        drawTeaCup(canvas, getWidth() / 2f, currentY);
-        canvas.restore();
-    }
+        canvas.drawRoundRect(left, top, right, bottom, batonHeight / 2f, batonHeight / 2f, paint);
 
-    private void drawTeaCup(Canvas canvas, float centerX, float centerY) {
-        float cupWidth = cupWidthPx > 0f ? cupWidthPx : dpToPx(24f);
-        float cupHeight = cupHeightPx > 0f ? cupHeightPx : dpToPx(12f);
-        float barTop = centerY - batonHeight / 2f;
-        float cupTop = barTop - cupHeight;
-        float cupRadius = dpToPx(4f);
+        float handleReach = cupWidth * 0.22f;
+        float halfTravel = Math.max(0f, ((right - left) / 2f) - (cupWidth / 2f) - handleReach - cupInset);
+        float cupCenterX = (getWidth() / 2f) + (cupOffsetNormalized * halfTravel);
+        float cupBottomY = top - dpToPx(2f);
+        float cupTopY = cupBottomY - cupHeight;
+        float cupLeft = cupCenterX - (cupWidth / 2f);
+        float cupRight = cupCenterX + (cupWidth / 2f);
 
-        cupRect.set(centerX - cupWidth / 2f, cupTop, centerX + cupWidth / 2f, barTop);
-        canvas.drawRoundRect(cupRect, cupRadius, cupRadius, cupPaint);
+        float topInset = cupWidth * 0.08f;
+        float bottomInset = cupWidth * 0.20f;
 
-        float teaInset = dpToPx(2f);
-        teaRect.set(cupRect.left + teaInset, cupRect.top + teaInset, cupRect.right - teaInset, cupRect.top + dpToPx(5f));
-        canvas.drawRoundRect(teaRect, dpToPx(2f), dpToPx(2f), teaPaint);
+        Path bodyPath = new Path();
+        bodyPath.moveTo(cupLeft + topInset, cupTopY);
+        bodyPath.lineTo(cupRight - topInset, cupTopY);
+        bodyPath.lineTo(cupRight - bottomInset, cupBottomY);
+        bodyPath.lineTo(cupLeft + bottomInset, cupBottomY);
+        bodyPath.close();
+        canvas.drawPath(bodyPath, cupPaint);
 
-        float handleInset = dpToPx(3f);
-        handleRect.set(cupRect.right - handleInset, cupRect.top + handleInset, cupRect.right + dpToPx(8f), cupRect.bottom - handleInset);
-        canvas.drawArc(handleRect, -90f, 220f, false, handlePaint);
-
-        float steamBaseY = cupRect.top - dpToPx(2f);
-        drawSteam(canvas, centerX - dpToPx(5f), steamBaseY);
-        drawSteam(canvas, centerX, steamBaseY - dpToPx(1f));
-        drawSteam(canvas, centerX + dpToPx(5f), steamBaseY);
-    }
-
-    private void drawSteam(Canvas canvas, float startX, float startY) {
-        steamPath.reset();
-        steamPath.moveTo(startX, startY);
-        steamPath.cubicTo(
-                startX + dpToPx(1.5f), startY - dpToPx(4f),
-                startX - dpToPx(1.5f), startY - dpToPx(8f),
-                startX, startY - dpToPx(12f)
+        float rimHeight = Math.max(dpToPx(3f), cupHeight * 0.08f);
+        canvas.drawRoundRect(
+                cupLeft + (topInset * 0.45f),
+                cupTopY - (rimHeight * 0.35f),
+                cupRight - (topInset * 0.45f),
+                cupTopY + rimHeight,
+                rimHeight,
+                rimHeight,
+                cupRimPaint
         );
-        canvas.drawPath(steamPath, steamPaint);
+
+        float handleStartX = cupRight - (topInset * 0.1f);
+        float handleTopY = cupTopY + (cupHeight * 0.26f);
+        float handleBottomY = cupTopY + (cupHeight * 0.74f);
+        Path handlePath = new Path();
+        handlePath.moveTo(handleStartX, handleTopY);
+        handlePath.cubicTo(
+                cupRight + handleReach,
+                cupTopY + (cupHeight * 0.24f),
+                cupRight + handleReach,
+                cupTopY + (cupHeight * 0.76f),
+                handleStartX,
+                handleBottomY
+        );
+        canvas.drawPath(handlePath, cupHandlePaint);
+        canvas.restore();
     }
 
     @Override
@@ -190,6 +209,10 @@ public class BatonView extends View {
             return value;
         }
         return Math.max(minY, Math.min(maxY, value));
+    }
+
+    private float clamp(float value, float min, float max) {
+        return Math.max(min, Math.min(max, value));
     }
 
     private float dpToPx(float dp) {
