@@ -79,6 +79,7 @@ public class GamePageActivity extends AppCompatActivity {
         batonView = findViewById(R.id.baton_view);
         View space1 = findViewById(R.id.space_1);
         View space2 = findViewById(R.id.space_2);
+        View square11 = findViewById(R.id.square_1_1);
 
         sensorManager = (SensorManager) getSystemService(SENSOR_SERVICE);
         if (sensorManager != null) {
@@ -88,12 +89,18 @@ public class GamePageActivity extends AppCompatActivity {
         ViewCompat.setOnApplyWindowInsetsListener(root, (gamePageRoot, insets) -> {
             Insets systemBars = insets.getInsets(WindowInsetsCompat.Type.systemBars());
             gamePageRoot.setPadding(systemBars.left, systemBars.top, systemBars.right, systemBars.bottom);
-            gamePageRoot.post(() -> configureBatonBounds(batonView, space1, space2));
+            gamePageRoot.post(() -> {
+                configureBatonBounds(batonView, space1, space2);
+                configureCupWidth(batonView, square11);
+            });
             return insets;
         });
 
         root.addOnLayoutChangeListener((v, left, top, right, bottom, oldLeft, oldTop, oldRight, oldBottom) ->
-                configureBatonBounds(batonView, space1, space2));
+        {
+            configureBatonBounds(batonView, space1, space2);
+            configureCupWidth(batonView, square11);
+        });
     }
 
     @Override
@@ -137,5 +144,13 @@ public class GamePageActivity extends AppCompatActivity {
 
     private float clamp(float value, float min, float max) {
         return Math.max(min, Math.min(max, value));
+    }
+
+    private void configureCupWidth(BatonView batonView, View square11) {
+        if (square11 == null || square11.getWidth() <= 0 || square11.getHeight() <= 0) {
+            return;
+        }
+        batonView.setCupWidthPx(square11.getWidth() * (2f / 3f));
+        batonView.setCupHeightPx(square11.getHeight() * (2f / 3f));
     }
 }
