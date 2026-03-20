@@ -22,24 +22,31 @@ import androidx.core.graphics.Insets;
 import androidx.core.view.ViewCompat;
 import androidx.core.view.WindowInsetsCompat;
 
+import com.example.thequilibre.game.ObstacleSystem;
 import com.example.thequilibre.model.GameView;
+
+import java.util.Arrays;
+import java.util.List;
 
 public class GamePageActivity extends AppCompatActivity {
 
-    public static final String DIFFICULTY_MEDIUM = "";
-    public static final String DIFFICULTY_EASY = "";
-    public static final String DIFFICULTY_HARD = "";
-    public static final String EXTRA_DIFFICULTY = "";
+    public static final String DIFFICULTY_MEDIUM = "Medium";
+    public static final String DIFFICULTY_EASY = "Easy";
+    public static final String DIFFICULTY_HARD = "Hard";
+    public static final String EXTRA_DIFFICULTY = "com.example.thequilibre.extra.DIFFICULTY";
+
+    private static final float ROTATION_SMOOTHING = 0.18f;
+    private static final float MAX_BATON_ROTATION_DEGREES = 50f;
+    private static final int SAMPLE_RATE = 8000;
 
     private GameView gameView;
+    private BatonView batonView;
+    private ObstacleSystem obstacleSystem;
 
     private AudioRecord audioRecord;
     private boolean isRecording = false;
-
-    private static final int SAMPLE_RATE = 8000;
     private int bufferSize;
 
-    private BatonView batonView;
     private SensorManager sensorManager;
     private Sensor rotationVectorSensor;
 
@@ -49,9 +56,6 @@ public class GamePageActivity extends AppCompatActivity {
 
     private float filteredRotationDegrees;
 
-    private static final float ROTATION_SMOOTHING = 0.18f;
-    private static final float MAX_BATON_ROTATION_DEGREES = 50f;
-
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
@@ -59,43 +63,75 @@ public class GamePageActivity extends AppCompatActivity {
         EdgeToEdge.enable(this);
         setContentView(R.layout.activity_game_page);
 
-        // 🎮 GameView
         FrameLayout container = findViewById(R.id.game_container);
-        gameView = new GameView(this);
-        container.addView(gameView);
-
-        // 🎮 UI
+        FrameLayout obstacleOverlay = findViewById(R.id.obstacle_overlay);
         View root = findViewById(R.id.main);
+
         batonView = findViewById(R.id.baton_view);
         View space1 = findViewById(R.id.space_1);
         View space2 = findViewById(R.id.space_2);
         View referenceSquare = findViewById(R.id.square_1_1);
 
-        // 🎮 Sensors
+        gameView = new GameView(this);
+        container.addView(gameView);
+
+        List<View> slotViews = Arrays.asList(
+                findViewById(R.id.square_1_1),
+                findViewById(R.id.square_1_2),
+                findViewById(R.id.square_1_3),
+                findViewById(R.id.square_2_1),
+                findViewById(R.id.square_2_2),
+                findViewById(R.id.square_2_3)
+        );
+
+        String selectedDifficulty = getIntent().getStringExtra(EXTRA_DIFFICULTY);
+        if (selectedDifficulty == null || selectedDifficulty.trim().isEmpty()) {
+            selectedDifficulty = DIFFICULTY_MEDIUM;
+        }
+
+        obstacleSystem = new ObstacleSystem(
+                this,
+                obstacleOverlay,
+                slotViews,
+                batonView,
+                selectedDifficulty,
+                slotIndex -> batonView.notifyDangerCollision()
+        );
+
         sensorManager = (SensorManager) getSystemService(SENSOR_SERVICE);
         if (sensorManager != null) {
             rotationVectorSensor = sensorManager.getDefaultSensor(Sensor.TYPE_ROTATION_VECTOR);
         }
 
-        // 🎮 Insets
         ViewCompat.setOnApplyWindowInsetsListener(root, (gamePageRoot, insets) -> {
             Insets systemBars = insets.getInsets(WindowInsetsCompat.Type.systemBars());
             gamePageRoot.setPadding(systemBars.left, systemBars.top, systemBars.right, systemBars.bottom);
 
-            gamePageRoot.post(() ->
-                    configureBatonBounds(batonView, space1, space2, referenceSquare)
-            );
+            gamePageRoot.post(() -> {
+                configureBatonBounds(batonView, space1, space2, referenceSquare);
+                if (obstacleSystem != null) {
+                    obstacleSystem.updateLayoutBounds();
+                }
+            });
 
             return insets;
         });
 
-        // 🎮 Layout change
         root.addOnLayoutChangeListener((v, left, top, right, bottom,
-                                        oldLeft, oldTop, oldRight, oldBottom) ->
-                configureBatonBounds(batonView, space1, space2, referenceSquare)
-        );
+                                        oldLeft, oldTop, oldRight, oldBottom) -> {
+            configureBatonBounds(batonView, space1, space2, referenceSquare);
+            if (obstacleSystem != null) {
+                obstacleSystem.updateLayoutBounds();
+            }
+        });
 
-        // 🎤 Micro
+        root.post(() -> {
+            configureBatonBounds(batonView, space1, space2, referenceSquare);
+            if (obstacleSystem != null) {
+                obstacleSystem.updateLayoutBounds();
+            }
+        });
+
         checkAudioPermission();
     }
 
@@ -125,7 +161,6 @@ public class GamePageActivity extends AppCompatActivity {
     }
 
     private void startMicro() {
-
         bufferSize = AudioRecord.getMinBufferSize(
                 SAMPLE_RATE,
                 AudioFormat.CHANNEL_IN_MONO,
@@ -152,23 +187,18 @@ public class GamePageActivity extends AppCompatActivity {
     }
 
     private void startListening() {
-
         new Thread(() -> {
-
             short[] buffer = new short[bufferSize];
 
             while (isRecording) {
-
                 int read = audioRecord.read(buffer, 0, bufferSize);
 
                 long sum = 0;
-
                 for (int i = 0; i < read; i++) {
                     sum += Math.abs(buffer[i]);
                 }
 
                 int micLevel = (int) (sum / (read + 1));
-
                 boolean isBlowing = micLevel > 5000;
 
                 runOnUiThread(() -> gameView.setBlowing(isBlowing));
@@ -179,12 +209,18 @@ public class GamePageActivity extends AppCompatActivity {
     @Override
     protected void onResume() {
         super.onResume();
+
         if (sensorManager != null && rotationVectorSensor != null) {
             sensorManager.registerListener(
                     orientationListener,
                     rotationVectorSensor,
                     SensorManager.SENSOR_DELAY_GAME
             );
+        }
+
+        if (obstacleSystem != null) {
+            obstacleSystem.updateLayoutBounds();
+            obstacleSystem.resumeOrStart();
         }
     }
 
@@ -194,6 +230,19 @@ public class GamePageActivity extends AppCompatActivity {
 
         if (sensorManager != null) {
             sensorManager.unregisterListener(orientationListener);
+        }
+
+        if (obstacleSystem != null) {
+            obstacleSystem.pause();
+        }
+    }
+
+    @Override
+    protected void onDestroy() {
+        super.onDestroy();
+
+        if (obstacleSystem != null) {
+            obstacleSystem.stop();
         }
 
         if (audioRecord != null) {
