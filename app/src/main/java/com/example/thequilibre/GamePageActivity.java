@@ -34,10 +34,19 @@ public class GamePageActivity extends AppCompatActivity {
     public static final String DIFFICULTY_EASY = "Easy";
     public static final String DIFFICULTY_HARD = "Hard";
     public static final String EXTRA_DIFFICULTY = "com.example.thequilibre.extra.DIFFICULTY";
+    public static final String EXTRA_FINAL_SCORE = "com.example.thequilibre.extra.FINAL_SCORE";
+    public static final String EXTRA_GAME_OVER_REASON = "com.example.thequilibre.extra.GAME_OVER_REASON";
 
     private static final float ROTATION_SMOOTHING = 0.18f;
     private static final float MAX_BATON_ROTATION_DEGREES = 50f;
+    private static final float GAME_OVER_TEMPERATURE_CELSIUS = 60f;
     private static final int SAMPLE_RATE = 8000;
+    private static final int POINTS_PER_VALIDATED_SQUARE = 3;
+
+    private enum GameOverReason {
+        CUP_COLLISION,
+        TEMPERATURE_LIMIT
+    }
 
     private GameView gameView;
     private BatonView batonView;
@@ -57,6 +66,10 @@ public class GamePageActivity extends AppCompatActivity {
 
     private float filteredRotationDegrees;
     private boolean batonStartPositionInitialized;
+    private int currentScore;
+    private int finalScore;
+    private boolean isGameOver;
+    private GameOverReason gameOverReason;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -85,6 +98,16 @@ public class GamePageActivity extends AppCompatActivity {
         });
 
         gameView = new GameView(this);
+        currentScore = 0;
+        finalScore = 0;
+        isGameOver = false;
+        gameOverReason = null;
+        gameView.setScore(currentScore);
+        gameView.setGameEventListener(temperatureCelsius -> runOnUiThread(() -> {
+            if (temperatureCelsius >= GAME_OVER_TEMPERATURE_CELSIUS) {
+                triggerGameOver(GameOverReason.TEMPERATURE_LIMIT);
+            }
+        }));
 
         String difficulty = getIntent().getStringExtra(EXTRA_DIFFICULTY);
 
@@ -115,7 +138,21 @@ public class GamePageActivity extends AppCompatActivity {
                 slotViews,
                 batonView,
                 selectedDifficulty,
-                slotIndex -> batonView.notifyDangerCollision()
+                new ObstacleSystem.Listener() {
+                    @Override
+                    public void onDangerousCollision(int slotIndex) {
+                        batonView.notifyDangerCollision();
+                        if (cupView != null) {
+                            cupView.invalidate();
+                        }
+                        triggerGameOver(GameOverReason.CUP_COLLISION);
+                    }
+
+                    @Override
+                    public void onObstacleValidated(int slotIndex) {
+                        handleValidatedSquare(slotIndex);
+                    }
+                }
         );
 
         sensorManager = (SensorManager) getSystemService(SENSOR_SERVICE);
@@ -181,6 +218,9 @@ public class GamePageActivity extends AppCompatActivity {
     }
 
     private void startMicro() {
+        if (isGameOver) {
+            return;
+        }
         bufferSize = AudioRecord.getMinBufferSize(
                 SAMPLE_RATE,
                 AudioFormat.CHANNEL_IN_MONO,
@@ -226,11 +266,74 @@ public class GamePageActivity extends AppCompatActivity {
         }).start();
     }
 
+    private void handleValidatedSquare(int slotIndex) {
+        if (isGameOver) {
+            return;
+        }
+        addScore(POINTS_PER_VALIDATED_SQUARE);
+    }
+
+    private void addScore(int points) {
+        currentScore += Math.max(0, points);
+        if (gameView != null) {
+            gameView.setScore(currentScore);
+        }
+    }
+
+    private void triggerGameOver(GameOverReason reason) {
+        if (isGameOver) {
+            return;
+        }
+        isGameOver = true;
+        gameOverReason = reason;
+        finalScore = currentScore;
+
+        if (gameView != null) {
+            gameView.setGameOver(true);
+            gameView.setBlowing(false);
+        }
+        if (obstacleSystem != null) {
+            obstacleSystem.pause();
+            batonView.post(() -> {
+                if (obstacleSystem != null) {
+                    obstacleSystem.stop();
+                }
+            });
+        }
+        if (sensorManager != null) {
+            sensorManager.unregisterListener(orientationListener);
+        }
+        stopMicrophoneCapture();
+    }
+
+    private void stopMicrophoneCapture() {
+        isRecording = false;
+        if (audioRecord == null) {
+            return;
+        }
+        try {
+            audioRecord.stop();
+        } catch (IllegalStateException ignored) {
+            // Recorder already stopped or not initialized.
+        }
+        audioRecord.release();
+        audioRecord = null;
+    }
+
+    public Bundle buildGameOverPayloadForEndScreen() {
+        Bundle payload = new Bundle();
+        payload.putInt(EXTRA_FINAL_SCORE, finalScore);
+        if (gameOverReason != null) {
+            payload.putString(EXTRA_GAME_OVER_REASON, gameOverReason.name());
+        }
+        return payload;
+    }
+
     @Override
     protected void onResume() {
         super.onResume();
 
-        if (sensorManager != null && rotationVectorSensor != null) {
+        if (!isGameOver && sensorManager != null && rotationVectorSensor != null) {
             sensorManager.registerListener(
                     orientationListener,
                     rotationVectorSensor,
@@ -238,7 +341,7 @@ public class GamePageActivity extends AppCompatActivity {
             );
         }
 
-        if (obstacleSystem != null) {
+        if (!isGameOver && obstacleSystem != null) {
             obstacleSystem.updateLayoutBounds();
             obstacleSystem.resumeOrStart();
         }
@@ -265,12 +368,7 @@ public class GamePageActivity extends AppCompatActivity {
             obstacleSystem.stop();
         }
 
-        if (audioRecord != null) {
-            isRecording = false;
-            audioRecord.stop();
-            audioRecord.release();
-            audioRecord = null;
-        }
+        stopMicrophoneCapture();
     }
 
     private void configureBatonBounds(BatonView batonView, View space1, View space2, View referenceSquare) {

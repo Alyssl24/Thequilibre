@@ -4,11 +4,22 @@ import android.content.Context;
 import android.graphics.Canvas;
 import android.graphics.Color;
 import android.graphics.Paint;
+import android.graphics.PorterDuff;
 import android.graphics.RectF;
 import android.view.SurfaceHolder;
 import android.view.SurfaceView;
 
+import androidx.annotation.Nullable;
+
 public class GameView extends SurfaceView implements SurfaceHolder.Callback {
+
+    public interface GameEventListener {
+        void onTemperatureLimitReached(float temperatureCelsius);
+    }
+
+    private static final float TEMPERATURE_MIN_CELSIUS = 20f;
+    private static final float TEMPERATURE_MAX_CELSIUS = 60f;
+    private static final float GAME_OVER_TEMPERATURE_CELSIUS = 60f;
 
     private GameThread thread;
 
@@ -16,11 +27,16 @@ public class GameView extends SurfaceView implements SurfaceHolder.Callback {
 
     private int temperature = 0;
     private int maxTemperature = 100;
+    private volatile int score = 0;
 
     private int frameCounter = 0;
 
-    private boolean isBlowing = false;
-    private int difficultySpeed = 18;
+    private volatile boolean isBlowing = false;
+    private volatile boolean isGameOver = false;
+    private volatile boolean temperatureGameOverDispatched = false;
+    private volatile int difficultySpeed = 18;
+    @Nullable
+    private volatile GameEventListener gameEventListener;
 
 
     public void setDifficulty(String difficulty) {
@@ -33,7 +49,7 @@ public class GameView extends SurfaceView implements SurfaceHolder.Callback {
             difficultySpeed = 10;
         }
     }
-    
+
     public GameView(Context context) {
         super(context);
 
@@ -51,6 +67,29 @@ public class GameView extends SurfaceView implements SurfaceHolder.Callback {
 
     public void setBlowing(boolean blowing) {
         this.isBlowing = blowing;
+    }
+
+    public void setScore(int score) {
+        this.score = Math.max(0, score);
+    }
+
+    public int getScore() {
+        return score;
+    }
+
+    public float getCurrentTemperatureCelsius() {
+        return TEMPERATURE_MIN_CELSIUS + (temperature / (float) maxTemperature) * (TEMPERATURE_MAX_CELSIUS - TEMPERATURE_MIN_CELSIUS);
+    }
+
+    public void setGameOver(boolean gameOver) {
+        isGameOver = gameOver;
+        if (!gameOver) {
+            temperatureGameOverDispatched = false;
+        }
+    }
+
+    public void setGameEventListener(@Nullable GameEventListener gameEventListener) {
+        this.gameEventListener = gameEventListener;
     }
 
     @Override
@@ -79,6 +118,9 @@ public class GameView extends SurfaceView implements SurfaceHolder.Callback {
     public void surfaceChanged(SurfaceHolder holder, int format, int width, int height) {}
 
     public void update() {
+        if (isGameOver) {
+            return;
+        }
 
         frameCounter++;
 
@@ -94,6 +136,14 @@ public class GameView extends SurfaceView implements SurfaceHolder.Callback {
         }
 
         if (temperature < 0) temperature = 0;
+
+        float celsius = getCurrentTemperatureCelsius();
+        if (!temperatureGameOverDispatched && celsius >= GAME_OVER_TEMPERATURE_CELSIUS) {
+            temperatureGameOverDispatched = true;
+            if (gameEventListener != null) {
+                gameEventListener.onTemperatureLimitReached(celsius);
+            }
+        }
     }
 
     @Override
@@ -101,11 +151,27 @@ public class GameView extends SurfaceView implements SurfaceHolder.Callback {
         super.draw(canvas);
 
         if (canvas == null) return;
+        canvas.drawColor(Color.TRANSPARENT, PorterDuff.Mode.CLEAR);
 
-        float left = 50f;
-        float top = 100f;
-        float right = getWidth() - 50f;
-        float bottom = top + 60f;
+        float horizontalInset = 24f;
+        float verticalInset = 16f;
+        float left = horizontalInset;
+        float right = getWidth() - horizontalInset;
+        if (right <= left) {
+            return;
+        }
+
+        paint.setColor(Color.DKGRAY);
+        String scoreText = "Score: " + score;
+        Paint.FontMetrics metrics = paint.getFontMetrics();
+        float scoreTextY = verticalInset - metrics.ascent;
+        canvas.drawText(scoreText, left, scoreTextY, paint);
+
+        float barTop = scoreTextY + metrics.descent + 12f;
+        float desiredBarHeight = 44f;
+        float maxBarBottom = getHeight() - verticalInset;
+        float bottom = Math.min(barTop + desiredBarHeight, maxBarBottom);
+        float top = Math.max(verticalInset, bottom - desiredBarHeight);
 
         float progressWidth = left + (temperature / (float) maxTemperature) * (right - left);
 
@@ -126,8 +192,8 @@ public class GameView extends SurfaceView implements SurfaceHolder.Callback {
 
         paint.setColor(Color.WHITE);
 
-        float tempCelsius = 20 + (temperature / (float) maxTemperature) * 40;
-        String text = (int) tempCelsius + " °C";
+        float tempCelsius = getCurrentTemperatureCelsius();
+        String text = (int) tempCelsius + " \u00B0C";
 
         float textX = right - paint.measureText(text) - 20;
         float textY = top + (bottom - top) / 2 - ((paint.descent() + paint.ascent()) / 2);
