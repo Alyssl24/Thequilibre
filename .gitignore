@@ -1,0 +1,66 @@
+*.iml
+.gradle
+/local.properties
+/.idea/caches
+/.idea/libraries
+/.idea/modules.xml
+/.idea/workspace.xml
+/.idea/navEditor.xml
+/.idea/assetWizardSettings.xml
+.DS_Store
+/build
+/captures
+.externalNativeBuild
+.cxx
+local.properties
+
+
+# ===== Gradle =====
+.gradle/
+build/
+*/build/
+
+# ===== Local configuration =====
+local.properties
+
+# ===== Android Studio / IntelliJ =====
+.idea/
+*.iml
+
+# Optionnel (garder certains réglages partagés)
+!.idea/codeStyles/
+!.idea/runConfigurations/
+
+# ===== OS =====
+.DS_Store
+Thumbs.db
+
+# ===== Logs =====
+*.log
+
+# ===== Generated files =====
+captures/
+.externalNativeBuild/
+.cxx/
+
+# ===== APK / Bundle =====
+*.apk
+*.aab
+
+# ===== Native =====
+*.so
+obj/
+
+# ===== Signing keys (IMPORTANT) =====
+*.keystore
+*.jks
+
+# ===== Java specific =====
+*.class
+
+# ===== IntelliJ build =====
+out/
+
+# ===== Misc =====
+*.orig
+*.rej
